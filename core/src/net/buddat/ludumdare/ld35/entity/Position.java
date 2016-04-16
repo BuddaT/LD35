@@ -6,12 +6,12 @@ import com.badlogic.gdx.math.Vector3;
 /**
  * Object rotation
  */
-public class PositionComponent implements Component {
+public class Position implements Component {
 	public Vector3 position;
-	public Vector3 orientation;
+	public Vector3 rotation;
 
-	public PositionComponent(float x, float y, float z, float oX, float oY, float oZ) {
+	public Position(float x, float y, float z, float rX, float rY, float rZ) {
 		this.position = new Vector3(x, y, z);
-		this.orientation = new Vector3(oX, oY, oZ);
+		this.rotation = new Vector3(rX, rY, rZ);
 	}
 }
