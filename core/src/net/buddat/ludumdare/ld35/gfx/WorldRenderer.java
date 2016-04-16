@@ -1,5 +1,7 @@
 package net.buddat.ludumdare.ld35.gfx;
 
+import java.util.HashMap;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -36,6 +38,7 @@ public class WorldRenderer implements ProjectionTranslator {
 	private PerspectiveCamera playerCam, sunCam;
 
 	private final Array<ModelInstance> instances = new Array<ModelInstance>();
+	private final HashMap<ModelInstance, AnimationController> animations = new HashMap<ModelInstance, AnimationController>();
 
 	private AnimationController playerAnimation;
 
@@ -70,10 +73,9 @@ public class WorldRenderer implements ProjectionTranslator {
 		testModelInstance2 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.BLUE, 16);
 		
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
-		// playerModelInstance.transform.setToRotation(Vector3.X, 90f);
 
 		playerAnimation = new AnimationController(playerModelInstance);
-		playerAnimation.setAnimation(playerModelInstance.animations.first().id, 9999);
+		playerAnimation.setAnimation(playerModelInstance.animations.first().id, -1);
 
 		testModelInstance2.transform.setToTranslation(5f, 0f, 5f);
 		playerModelInstance.transform.setToTranslation(-5f, 0f, 5f);
@@ -84,6 +86,11 @@ public class WorldRenderer implements ProjectionTranslator {
 						ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_SHEEP);
 						model.transform.setToTranslation(position);
 						instances.add(model);
+						
+						AnimationController anim = new AnimationController(model);
+						anim.setAnimation(model.animations.first().id, -1, (float) (Math.random() * 2f), null);
+						animations.put(model, anim);
+						
 						return model;
 					}
 				});
@@ -93,13 +100,9 @@ public class WorldRenderer implements ProjectionTranslator {
 		instances.add(testModelInstance);
 		instances.add(testModelInstance2);
 		instances.add(playerModelInstance);
-
-		// playerModelInstance.transform.setToRotation(Vector3.X, 90f);
 	}
 
 	private boolean reverseY = false;
-
-	private final float ballSpeed = 10f;
 
 	public void update() {
 		float delta = Gdx.graphics.getDeltaTime();
@@ -120,11 +123,15 @@ public class WorldRenderer implements ProjectionTranslator {
 		shadowLight.setDirection(sunLight.direction);
 
 		playerAnimation.update(delta);
+		for (AnimationController a : animations.values())
+ {
+			a.update((float) (delta * Math.random()));
+
+			if (Math.random() > 0.5f)
+				a.update((float) (delta * Math.random()));
+		}
 
 		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
-		// TODO: Load all entity model information from Logic
-		// Add to instances if not already there
-		// Update all model positions and rotations
 	}
 
 	private static final float MIN_FRAME_LEN = 1f / GraphicsHandler.FPS_CAP;
