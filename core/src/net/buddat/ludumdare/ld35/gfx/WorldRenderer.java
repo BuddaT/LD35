@@ -34,7 +34,7 @@ public class WorldRenderer implements ProjectionTranslator {
 	private ModelBatch shadowBatch;
 
 	private ModelBatch modelBatch;
-	private ModelInstance worldModelInstance, testModelInstance, testModelInstance2, playerModelInstance;
+	private ModelInstance worldModelInstance, testModelInstance, wolfInstance, playerModelInstance;
 
 	private PerspectiveCamera playerCam, sunCam;
 
@@ -47,7 +47,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	public void create() {
 		playerCam = new PerspectiveCamera(60, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		playerCam.position.set(0f, 50f, 0f);
+		playerCam.position.set(0f, 40f, 0f);
 		playerCam.lookAt(0, 0, 0);
 		playerCam.near = 1f;
 		playerCam.far = 300f;
@@ -69,7 +69,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		worldModelInstance = ModelFactory.createBoxModel(500f, 0.2f, 500f, Color.FOREST);
 		testModelInstance = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
-		testModelInstance2 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.BLUE, 16);
+		wolfInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_WOLF);
 		
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
 
@@ -77,7 +77,11 @@ public class WorldRenderer implements ProjectionTranslator {
 		playerAnimation.setAnimation(playerModelInstance.animations.first().id, -1);
 		animations.put(playerModelInstance, playerAnimation);
 
-		testModelInstance2.transform.setToTranslation(5f, 0f, 5f);
+		AnimationController wolfAnim = new AnimationController(wolfInstance);
+		wolfAnim.setAnimation(wolfInstance.animations.first().id, -1);
+		animations.put(wolfInstance, wolfAnim);
+
+		wolfInstance.transform.setToTranslation(5f, 0f, 5f);
 		playerModelInstance.transform.setToTranslation(-5f, 0f, 5f);
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
@@ -99,7 +103,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		instances.add(worldModelInstance);
 		instances.add(testModelInstance);
-		instances.add(testModelInstance2);
+		instances.add(wolfInstance);
 		instances.add(playerModelInstance);
 	}
 
@@ -128,7 +132,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 0f,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
-		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 75f,
+		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 40f,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
 		playerCam.update();
 	}

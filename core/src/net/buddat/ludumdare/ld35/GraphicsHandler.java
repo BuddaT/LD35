@@ -23,12 +23,14 @@ public class GraphicsHandler extends ApplicationAdapter {
 
 	public static final String MDL_PLR = "playerTest.g3dj";
 	public static final String MDL_SHEEP = "sheepOriginal.g3dj";
+	public static final String MDL_WOLF = "wolfOriginal.g3dj";
 
 	@Override
 	public void create() {
 		assets = new AssetManager();
 		assets.load(MDL_PLR, Model.class);
 		assets.load(MDL_SHEEP, Model.class);
+		assets.load(MDL_WOLF, Model.class);
 
 		GraphicsHandler.getLogicHandler().init();
 
