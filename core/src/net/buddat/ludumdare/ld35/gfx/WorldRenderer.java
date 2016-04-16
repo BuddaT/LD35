@@ -10,10 +10,10 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
+import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
-import net.buddat.ludumdare.ld35.GraphicsHandler;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 
@@ -34,6 +34,8 @@ public class WorldRenderer {
 	private PerspectiveCamera playerCam, sunCam;
 
 	private final Array<ModelInstance> instances = new Array<ModelInstance>();
+
+	private AnimationController playerAnimation;
 
 	public WorldRenderer() {
 
@@ -64,7 +66,13 @@ public class WorldRenderer {
 		worldModelInstance = ModelFactory.createBoxModel(500f, 500f, 0.2f, Color.FOREST);
 		testModelInstance = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
 		testModelInstance2 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.BLUE, 16);
-		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TEST);
+		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
+
+		testModelInstance3.transform.setToRotation(Vector3.Y, 0.5f);
+
+		playerAnimation = new AnimationController(testModelInstance3);
+		playerAnimation.setAnimation(testModelInstance3.animations.first().id, 9999);
+		System.out.println(testModelInstance3.animations.first().id);
 
 		testModelInstance2.transform.setToTranslation(5f, 5f, 0f);
 		testModelInstance3.transform.setToTranslation(-5f, -5f, 0f);
@@ -106,6 +114,8 @@ public class WorldRenderer {
 				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
 		testModelInstance3.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
 				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
+
+		playerAnimation.update(delta);
 
 		// TODO: Load all entity model information from Logic
 		// Add to instances if not already there

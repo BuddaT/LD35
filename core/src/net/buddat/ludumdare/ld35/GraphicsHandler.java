@@ -22,11 +22,13 @@ public class GraphicsHandler extends ApplicationAdapter {
 	private boolean loadingAssets = true;
 
 	public static final String MDL_TEST = "testFile.g3db";
+	public static final String MDL_PLR = "playerTest.g3db";
 
 	@Override
 	public void create() {
 		assets = new AssetManager();
 		assets.load(MDL_TEST, Model.class);
+		assets.load(MDL_PLR, Model.class);
 
 		GraphicsHandler.getLogicHandler().init();
 
