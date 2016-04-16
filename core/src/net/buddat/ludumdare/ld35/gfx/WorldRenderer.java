@@ -47,8 +47,8 @@ public class WorldRenderer implements ProjectionTranslator {
 	}
 
 	public void create() {
-		playerCam = new PerspectiveCamera(60, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		playerCam.position.set(0f, 40f, 0f);
+		playerCam = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		playerCam.position.set(0f, 30f, 0f);
 		playerCam.lookAt(0, 0, 0);
 		playerCam.near = 1f;
 		playerCam.far = 300f;
@@ -151,7 +151,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 0f,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
-		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 40f,
+		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 30f,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
 		playerCam.update();
 	}
