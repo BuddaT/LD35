@@ -45,7 +45,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	public void create() {
 		playerCam = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		playerCam.position.set(0f, 0f, 50f);
+		playerCam.position.set(0f, 50f, 0f);
 		playerCam.lookAt(0, 0, 0);
 		playerCam.near = 1f;
 		playerCam.far = 300f;
@@ -54,80 +54,73 @@ public class WorldRenderer implements ProjectionTranslator {
 		worldEnvironment = new Environment();
 		worldEnvironment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1f));
 		
-		sunLight = new DirectionalLight().set(0.6f, 0.6f, 0.6f, -1f, -1f, -0.4f);
+		sunLight = new DirectionalLight().set(0.6f, 0.6f, 0.6f, -1f, -0.4f, -1f);
 		worldEnvironment.add(sunLight);
 
 		shadowLight = new DirectionalShadowLight(1024, 1024, 90f, 90f, 1f, 1000f);
-		shadowLight.set(0.6f, 0.6f, 0.6f, -1f, -0.8f, -0.4f);
+		shadowLight.set(0.6f, 0.6f, 0.6f, -1f, -0.4f, -1f);
 		worldEnvironment.add(shadowLight);
 		worldEnvironment.shadowMap = shadowLight;
 
 		modelBatch = new ModelBatch();
 		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
-		worldModelInstance = ModelFactory.createBoxModel(500f, 500f, 0.2f, Color.FOREST);
+		worldModelInstance = ModelFactory.createBoxModel(500f, 0.2f, 500f, Color.FOREST);
 		testModelInstance = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
 		testModelInstance2 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.BLUE, 16);
+		
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
-
-		playerModelInstance.transform.setToRotation(Vector3.Y, 0.5f);
+		// playerModelInstance.transform.setToRotation(Vector3.X, 90f);
 
 		playerAnimation = new AnimationController(playerModelInstance);
 		playerAnimation.setAnimation(playerModelInstance.animations.first().id, 9999);
-		System.out.println(playerModelInstance.animations.first().id);
 
-		testModelInstance2.transform.setToTranslation(5f, 5f, 0f);
-		playerModelInstance.transform.setToTranslation(-5f, -5f, 0f);
+		testModelInstance2.transform.setToTranslation(5f, 0f, 5f);
+		playerModelInstance.transform.setToTranslation(-5f, 0f, 5f);
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
 					@Override
 					public ModelInstance createModel(Vector3 position) {
-						ModelInstance model = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
+						ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_SHEEP);
 						model.transform.setToTranslation(position);
 						instances.add(model);
 						return model;
-				}
-		});
+					}
+				});
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
 
 		instances.add(worldModelInstance);
 		instances.add(testModelInstance);
 		instances.add(testModelInstance2);
 		instances.add(playerModelInstance);
+
+		// playerModelInstance.transform.setToRotation(Vector3.X, 90f);
 	}
 
-	private boolean reverseZ = false;
+	private boolean reverseY = false;
 
 	private final float ballSpeed = 10f;
 
 	public void update() {
 		float delta = Gdx.graphics.getDeltaTime();
-		sunLight.direction.add(delta * SUN_MOVEMENT_SPEED, delta * SUN_MOVEMENT_SPEED,
-				(reverseZ ? delta * SUN_MOVEMENT_SPEED : delta * -SUN_MOVEMENT_SPEED));
+		sunLight.direction.add(delta * SUN_MOVEMENT_SPEED,
+				(reverseY ? delta * SUN_MOVEMENT_SPEED : delta * -SUN_MOVEMENT_SPEED), delta * SUN_MOVEMENT_SPEED);
 
-		if (sunLight.direction.z < -1f)
-			reverseZ = true;
-		else if (sunLight.direction.z > 0f)
-			reverseZ = false;
+		if (sunLight.direction.y < -1f)
+			reverseY = true;
+		else if (sunLight.direction.y > 0f)
+			reverseY = false;
 
-		if (sunLight.direction.y > 1f)
-			sunLight.direction.y = -1f;
+		if (sunLight.direction.z > 1f)
+			sunLight.direction.z = -1f;
 
 		if (sunLight.direction.x > 1f)
 			sunLight.direction.x = -1f;
 
 		shadowLight.setDirection(sunLight.direction);
 
-		testModelInstance.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
-				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
-		testModelInstance2.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
-				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
-		playerModelInstance.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
-				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
-
 		playerAnimation.update(delta);
 
-		playerModelInstance.transform.setToRotation(Vector3.X, 90);
 		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
 		// TODO: Load all entity model information from Logic
 		// Add to instances if not already there
