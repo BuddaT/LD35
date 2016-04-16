@@ -87,8 +87,6 @@ public class LogicHandler {
 	public void update() {
 		// Move the player towards the 3d position the mouse is pointing to?
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
-		worldMousePosn.z = worldMousePosn.y;
-		worldMousePosn.y = 0;
 		POSN_MAPPER.get(player).position.set(worldMousePosn);
 		calculateMovementChanges();
 	}

@@ -195,6 +195,9 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	@Override
 	public Vector3 unproject(int x, int y) {
-		return playerCam.unproject(new Vector3(x, y, 0));
+		Vector3 worldPosition = playerCam.unproject(new Vector3(x, y, 0));
+		worldPosition.y = worldPosition.z;
+		worldPosition.z = 0;
+		return worldPosition;
 	}
 }
