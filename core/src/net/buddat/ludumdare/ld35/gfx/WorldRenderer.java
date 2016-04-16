@@ -34,7 +34,8 @@ public class WorldRenderer implements ProjectionTranslator {
 	private ModelBatch shadowBatch;
 
 	private ModelBatch modelBatch;
-	private ModelInstance worldModelInstance, testModelInstance, wolfInstance, playerModelInstance;
+	private ModelInstance worldModelInstance, testModelInstance, testModelInstance2, testModelInstance3, wolfInstance,
+			playerModelInstance;
 
 	private PerspectiveCamera playerCam, sunCam;
 
@@ -68,7 +69,9 @@ public class WorldRenderer implements ProjectionTranslator {
 		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
 		worldModelInstance = ModelFactory.createBoxModel(500f, 0.2f, 500f, Color.FOREST);
-		testModelInstance = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
+		testModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1);
+		testModelInstance2 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TREE1);
+		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TREE2);
 		wolfInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_WOLF);
 		
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
@@ -82,7 +85,9 @@ public class WorldRenderer implements ProjectionTranslator {
 		animations.put(wolfInstance, wolfAnim);
 
 		wolfInstance.transform.setToTranslation(5f, 0f, 5f);
-		playerModelInstance.transform.setToTranslation(-5f, 0f, 5f);
+		testModelInstance2.transform.setToTranslation(-10f, 0f, -10f);
+		testModelInstance3.transform.setToTranslation(-10f, 0f, 10f);
+
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
 					@Override
@@ -103,6 +108,8 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		instances.add(worldModelInstance);
 		instances.add(testModelInstance);
+		instances.add(testModelInstance2);
+		instances.add(testModelInstance3);
 		instances.add(wolfInstance);
 		instances.add(playerModelInstance);
 	}
