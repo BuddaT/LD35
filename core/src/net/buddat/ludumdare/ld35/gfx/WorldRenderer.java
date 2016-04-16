@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import net.buddat.ludumdare.ld35.GraphicsHandler;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 
@@ -67,6 +68,9 @@ public class WorldRenderer {
 
 		testModelInstance2.transform.setToTranslation(5f, 5f, 0f);
 		testModelInstance3.transform.setToTranslation(-5f, -5f, 0f);
+		for (ModelInstance model : GraphicsHandler.getLogicHandler().getModels()) {
+			instances.add(model);
+		}
 
 		instances.add(worldModelInstance);
 		instances.add(testModelInstance);
