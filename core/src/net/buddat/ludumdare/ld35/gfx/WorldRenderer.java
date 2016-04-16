@@ -16,8 +16,10 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
+import net.buddat.ludumdare.ld35.LogicHandler;
+import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 
-public class WorldRenderer {
+public class WorldRenderer implements ProjectionTranslator {
 
 	private static final float SUN_MOVEMENT_SPEED = 0.001f;
 
@@ -29,7 +31,7 @@ public class WorldRenderer {
 	private ModelBatch shadowBatch;
 
 	private ModelBatch modelBatch;
-	private ModelInstance worldModelInstance, testModelInstance, testModelInstance2, testModelInstance3;
+	private ModelInstance worldModelInstance, testModelInstance, testModelInstance2, playerModelInstance;
 
 	private PerspectiveCamera playerCam, sunCam;
 
@@ -66,24 +68,32 @@ public class WorldRenderer {
 		worldModelInstance = ModelFactory.createBoxModel(500f, 500f, 0.2f, Color.FOREST);
 		testModelInstance = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
 		testModelInstance2 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.BLUE, 16);
-		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
+		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
 
-		testModelInstance3.transform.setToRotation(Vector3.Y, 0.5f);
+		playerModelInstance.transform.setToRotation(Vector3.Y, 0.5f);
 
-		playerAnimation = new AnimationController(testModelInstance3);
-		playerAnimation.setAnimation(testModelInstance3.animations.first().id, 9999);
-		System.out.println(testModelInstance3.animations.first().id);
+		playerAnimation = new AnimationController(playerModelInstance);
+		playerAnimation.setAnimation(playerModelInstance.animations.first().id, 9999);
+		System.out.println(playerModelInstance.animations.first().id);
 
 		testModelInstance2.transform.setToTranslation(5f, 5f, 0f);
-		testModelInstance3.transform.setToTranslation(-5f, -5f, 0f);
-		for (ModelInstance model : GraphicsHandler.getLogicHandler().getModels()) {
-			instances.add(model);
-		}
+		playerModelInstance.transform.setToTranslation(-5f, -5f, 0f);
+		GraphicsHandler.getLogicHandler().createCreatures(
+				new LogicHandler.ModelInstanceProvider() {
+					@Override
+					public ModelInstance createModel(Vector3 position) {
+						ModelInstance model = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
+						model.transform.setToTranslation(position);
+						instances.add(model);
+						return model;
+				}
+		});
+		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
 
 		instances.add(worldModelInstance);
 		instances.add(testModelInstance);
 		instances.add(testModelInstance2);
-		instances.add(testModelInstance3);
+		instances.add(playerModelInstance);
 	}
 
 	private boolean reverseZ = false;
@@ -112,12 +122,13 @@ public class WorldRenderer {
 				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
 		testModelInstance2.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
 				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
-		testModelInstance3.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
+		playerModelInstance.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
 				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
 
 		playerAnimation.update(delta);
 
-		testModelInstance3.transform.setToRotation(Vector3.X, 90);
+		playerModelInstance.transform.setToRotation(Vector3.X, 90);
+		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
 		// TODO: Load all entity model information from Logic
 		// Add to instances if not already there
 		// Update all model positions and rotations
@@ -154,5 +165,14 @@ public class WorldRenderer {
 
 	public void dispose() {
 		modelBatch.dispose();
+	}
+
+	public PerspectiveCamera getPlayerCamera() {
+		return playerCam;
+	}
+
+	@Override
+	public Vector3 unproject(int x, int y) {
+		return playerCam.unproject(new Vector3(x, y, 0));
 	}
 }
