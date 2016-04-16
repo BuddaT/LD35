@@ -117,6 +117,7 @@ public class WorldRenderer {
 
 		playerAnimation.update(delta);
 
+		testModelInstance3.transform.setToRotation(Vector3.X, 90);
 		// TODO: Load all entity model information from Logic
 		// Add to instances if not already there
 		// Update all model positions and rotations
