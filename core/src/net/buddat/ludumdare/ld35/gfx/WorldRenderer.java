@@ -106,6 +106,18 @@ public class WorldRenderer implements ProjectionTranslator {
 				});
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
 
+		for (int i = 0; i < 100; i++)
+			for (int j = 0; j < 100; j++) {
+				if (MathUtils.randomBoolean(0.5f))
+					continue;
+
+				ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_GRASS);
+				model.transform.setToTranslation(-250f + (i * 5f), 0f, -250f + (j * 5f));
+				model.transform.rotate(Vector3.Y, MathUtils.random() * 180f);
+
+				instances.add(model);
+			}
+
 		instances.add(worldModelInstance);
 		instances.add(testModelInstance);
 		instances.add(testModelInstance2);
