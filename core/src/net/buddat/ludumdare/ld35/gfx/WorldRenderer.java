@@ -46,7 +46,7 @@ public class WorldRenderer implements ProjectionTranslator {
 	}
 
 	public void create() {
-		playerCam = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		playerCam = new PerspectiveCamera(60, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		playerCam.position.set(0f, 50f, 0f);
 		playerCam.lookAt(0, 0, 0);
 		playerCam.near = 1f;
@@ -59,7 +59,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		sunLight = new DirectionalLight().set(0.6f, 0.6f, 0.6f, -1f, -0.4f, -1f);
 		worldEnvironment.add(sunLight);
 
-		shadowLight = new DirectionalShadowLight(1024, 1024, 90f, 90f, 1f, 1000f);
+		shadowLight = new DirectionalShadowLight(1024, 1024, 120f, 120f, 1f, 1000f);
 		shadowLight.set(0.6f, 0.6f, 0.6f, -1f, -0.4f, -1f);
 		worldEnvironment.add(shadowLight);
 		worldEnvironment.shadowMap = shadowLight;
@@ -131,8 +131,6 @@ public class WorldRenderer implements ProjectionTranslator {
 		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 75f,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
 		playerCam.update();
-
-		System.out.println(GraphicsHandler.getLogicHandler().getPlayerPosn());
 	}
 
 	private static final float MIN_FRAME_LEN = 1f / GraphicsHandler.FPS_CAP;
@@ -146,7 +144,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-		shadowLight.begin(Vector3.Zero, playerCam.direction);
+		shadowLight.begin(playerCam.position.add(0f, -60f, 0f), playerCam.direction);
 		shadowBatch.begin(shadowLight.getCamera());
 
 		shadowBatch.render(instances);
