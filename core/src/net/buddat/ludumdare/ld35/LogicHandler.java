@@ -1,9 +1,12 @@
 package net.buddat.ludumdare.ld35;
 
-public class LogicHandler extends Thread {
+public class LogicHandler {
 
-	@Override
-	public void run() {
+	public void init() {
+
+	}
+
+	public void update() {
 
 	}
 

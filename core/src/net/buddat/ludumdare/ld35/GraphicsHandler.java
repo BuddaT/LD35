@@ -20,6 +20,7 @@ public class GraphicsHandler extends ApplicationAdapter {
 
 	private static LogicHandler logicHandler = new LogicHandler();
 	private static GraphicsHandler graphicsHandler;
+	private Thread logicThread;
 
 	public Environment environment;
 
@@ -32,7 +33,7 @@ public class GraphicsHandler extends ApplicationAdapter {
 
 	@Override
 	public void create () {
-		GraphicsHandler.getLogicHandler().start();
+		GraphicsHandler.getLogicHandler().init();
 
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
@@ -58,6 +59,8 @@ public class GraphicsHandler extends ApplicationAdapter {
 
 	@Override
 	public void render () {
+		GraphicsHandler.getLogicHandler().update();
+
 		camController.update();
 
 		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
