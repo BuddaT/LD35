@@ -1,40 +1,71 @@
 package net.buddat.ludumdare.ld35;
 
 import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.g3d.Model;
 
+import net.buddat.ludumdare.ld35.gfx.UIRenderer;
 import net.buddat.ludumdare.ld35.gfx.WorldRenderer;
 
 public class GraphicsHandler extends ApplicationAdapter {
+
+	public static final float FPS_CAP = 90f;
 
 	private static LogicHandler logicHandler = new LogicHandler();
 	private static GraphicsHandler graphicsHandler;
 
 	private WorldRenderer worldRenderer;
+	private UIRenderer uiRenderer;
+
+	private AssetManager assets;
+
+	private boolean loadingAssets = true;
+
+	public static final String MDL_TEST = "testFile.g3db";
 
 	@Override
 	public void create() {
+		assets = new AssetManager();
+		assets.load(MDL_TEST, Model.class);
+
 		GraphicsHandler.getLogicHandler().init();
 
 		worldRenderer = new WorldRenderer();
+		uiRenderer = new UIRenderer();
+	}
+
+	private void doneLoading() {
+		loadingAssets = false;
+
 		worldRenderer.create();
+		uiRenderer.init();
 	}
 
 	@Override
 	public void render() {
+		if (loadingAssets) {
+			if (assets.update())
+				doneLoading();
+			return;
+		}
+
 		GraphicsHandler.getLogicHandler().update();
 		worldRenderer.update();
 
-		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
 		worldRenderer.render();
+
+		uiRenderer.render();
 	}
 
 	@Override
 	public void dispose() {
 		worldRenderer.dispose();
+		uiRenderer.dispose();
+		assets.dispose();
+	}
+
+	public AssetManager getAssets() {
+		return assets;
 	}
 
 	public static LogicHandler getLogicHandler() {

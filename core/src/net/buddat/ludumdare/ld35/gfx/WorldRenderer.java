@@ -14,7 +14,11 @@ import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
+import net.buddat.ludumdare.ld35.GraphicsHandler;
+
 public class WorldRenderer {
+
+	private static final float SUN_MOVEMENT_SPEED = 0.001f;
 
 	private Environment worldEnvironment;
 
@@ -35,7 +39,7 @@ public class WorldRenderer {
 	}
 
 	public void create() {
-		playerCam = new PerspectiveCamera(90, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		playerCam = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		playerCam.position.set(0f, 0f, 50f);
 		playerCam.lookAt(0, 0, 0);
 		playerCam.near = 1f;
@@ -43,13 +47,13 @@ public class WorldRenderer {
 		playerCam.update();
 
 		worldEnvironment = new Environment();
-		worldEnvironment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
+		worldEnvironment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1f));
 		
-		sunLight = new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -1f, -0.4f);
+		sunLight = new DirectionalLight().set(0.6f, 0.6f, 0.6f, -1f, -1f, -0.4f);
 		worldEnvironment.add(sunLight);
 
 		shadowLight = new DirectionalShadowLight(1024, 1024, 90f, 90f, 1f, 1000f);
-		shadowLight.set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.4f);
+		shadowLight.set(0.6f, 0.6f, 0.6f, -1f, -0.8f, -0.4f);
 		worldEnvironment.add(shadowLight);
 		worldEnvironment.shadowMap = shadowLight;
 
@@ -59,7 +63,7 @@ public class WorldRenderer {
 		worldModelInstance = ModelFactory.createBoxModel(500f, 500f, 0.2f, Color.FOREST);
 		testModelInstance = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
 		testModelInstance2 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.BLUE, 16);
-		testModelInstance3 = ModelFactory.createSphereModel(5f, 5f, 5f, Color.GOLD, 16);
+		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TEST);
 
 		testModelInstance2.transform.setToTranslation(5f, 5f, 0f);
 		testModelInstance3.transform.setToTranslation(-5f, -5f, 0f);
@@ -72,8 +76,12 @@ public class WorldRenderer {
 
 	private boolean reverseZ = false;
 
+	private final float ballSpeed = 10f;
+
 	public void update() {
-		sunLight.direction.add(0.00005f, 0.00005f, (reverseZ ? 0.00005f : -0.00005f));
+		float delta = Gdx.graphics.getDeltaTime();
+		sunLight.direction.add(delta * SUN_MOVEMENT_SPEED, delta * SUN_MOVEMENT_SPEED,
+				(reverseZ ? delta * SUN_MOVEMENT_SPEED : delta * -SUN_MOVEMENT_SPEED));
 
 		if (sunLight.direction.z < -1f)
 			reverseZ = true;
@@ -88,12 +96,29 @@ public class WorldRenderer {
 
 		shadowLight.setDirection(sunLight.direction);
 
-		testModelInstance.transform.translate((float) Math.random() - 0.5f, (float) Math.random() - 0.5f, 0);
-		testModelInstance2.transform.translate((float) Math.random() - 0.5f, (float) Math.random() - 0.5f, 0);
-		testModelInstance3.transform.translate((float) Math.random() - 0.5f, (float) Math.random() - 0.5f, 0);
+		testModelInstance.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
+				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
+		testModelInstance2.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
+				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
+		testModelInstance3.transform.translate(((float) Math.random() - 0.5f) * delta * ballSpeed,
+				((float) Math.random() - 0.5f) * delta * ballSpeed, 0);
+
+		// TODO: Load all entity model information from Logic
+		// Add to instances if not already there
+		// Update all model positions and rotations
 	}
 
+	private static final float MIN_FRAME_LEN = 1f / GraphicsHandler.FPS_CAP;
+	private float timeSinceLastRender = 0;
+
 	public void render() {
+		timeSinceLastRender += Gdx.graphics.getDeltaTime();
+		if (timeSinceLastRender < MIN_FRAME_LEN)
+			return;
+
+		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
 		shadowLight.begin(Vector3.Zero, playerCam.direction);
 		shadowBatch.begin(shadowLight.getCamera());
 
@@ -108,6 +133,8 @@ public class WorldRenderer {
 		modelBatch.begin(playerCam);
 		modelBatch.render(instances, worldEnvironment);
 		modelBatch.end();
+
+		timeSinceLastRender = 0;
 	}
 
 	public void dispose() {

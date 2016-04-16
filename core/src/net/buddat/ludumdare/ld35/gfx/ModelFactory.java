@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 
+import net.buddat.ludumdare.ld35.GraphicsHandler;
+
 public class ModelFactory {
 
 	private static final ModelBuilder modelBuilder = new ModelBuilder();
@@ -16,19 +18,19 @@ public class ModelFactory {
 		Model model = modelBuilder.createBox(sizeX, sizeY, sizeZ, new Material(ColorAttribute.createDiffuse(c)),
 				Usage.Position | Usage.Normal);
 
-		ModelInstance toReturn = new ModelInstance(model);
-		// model.dispose();
-
-		return toReturn;
+		return new ModelInstance(model);
 	}
 
 	public static ModelInstance createSphereModel(float sizeX, float sizeY, float sizeZ, Color c, int divisions) {
 		Model model = modelBuilder.createSphere(sizeX, sizeY, sizeZ, divisions, divisions,
 				new Material(ColorAttribute.createDiffuse(c)), Usage.Position | Usage.Normal);
 
-		ModelInstance toReturn = new ModelInstance(model);
-		// model.dispose();
+		return new ModelInstance(model);
+	}
 
-		return toReturn;
+	public static ModelInstance createCustomModel(String modelFile) {
+		Model model = GraphicsHandler.getGraphicsHandler().getAssets().get(modelFile, Model.class);
+
+		return new ModelInstance(model);
 	}
 }
