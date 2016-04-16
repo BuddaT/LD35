@@ -29,13 +29,22 @@ public class LogicHandler {
 	// Speed at which evasion is attempted
 	private static final float EVASION_SPEED = 1;
 	// Distance to calculate crowding (^ 2 to avoid sqrt)
-	private static final float CROWDING_RANGE = 30;
+	private static final float CROWDING_RANGE = 10*10;
 	private static final float CROWDING_SPEED = 0.5f;
 	// Distance to calculate cohesion (^ 2 to avoid sqrt)
-	private static final float COHESION_RANGE = 900;
+	private static final float COHESION_RANGE = 30*30;
 	private static final float COHESION_SPEED = 0.05f;
 
 	private static final float MAX_SPEED = 2;
+
+	private static final float DIRECTIONAL_DAMPING = 0.5f;
+
+	private Entity createNewCreature(Vector3 position, Vector3 rotation) {
+		Entity creature = new Entity();
+		creature.add(new Position(position, rotation));
+		creature.add(new Movement(0, 0, 0, 0, 0, 0));
+		return creature;
+	}
 
 	public void init() {
 		engine = new Engine();
@@ -45,11 +54,10 @@ public class LogicHandler {
 		player.add(new Mouseable());
 		engine.addEntity(player);
 		for (int i = 0; i < NUM_CREATURES; i++) {
-			Entity creature = new Entity();
-			creature.add(new Position(new Vector3(5f + 10f*i, 5f, 0f), new Vector3()));
-			creature.add(new Movement(0, 0, 0, 0, 0, 0));
-			engine.addEntity(creature);
+			engine.addEntity(createNewCreature(new Vector3(5f + 10f*i, 5f, 0f), new Vector3()));
 		}
+		engine.addEntity(createNewCreature(new Vector3(20f, 25f, 0f), new Vector3()));
+
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
 		models = createModels(engine.getEntitiesFor(creatures));
 	}
@@ -97,16 +105,18 @@ public class LogicHandler {
 				Position otherPosn = POSN_MAPPER.get(potentialNeighbor);
 				float distance = posn.position.dst2(otherPosn.position);
 				if (distance <= CROWDING_RANGE) {
-					crowdingChange.add(new Vector3(posn.position).sub(otherPosn.position).nor());
+					// crowding acceleration is inversely proportional to distance
+					Vector3 crowdDirection = new Vector3(posn.position).sub(otherPosn.position).nor();
+					crowdingChange.add(crowdDirection.scl(CROWDING_RANGE/(distance*distance)));
 				}
 				if (distance <= COHESION_RANGE) {
 					cohesionChange.add(new Vector3(otherPosn.position).sub(posn.position).nor());
 				}
 			}
-			crowdingChange.nor().scl(CROWDING_SPEED);
-			cohesionChange.nor().scl(COHESION_SPEED);
+			crowdingChange.clamp(0, CROWDING_SPEED);
+			cohesionChange.clamp(0, COHESION_SPEED);
 			change.add(crowdingChange).add(cohesionChange).clamp(0, MAX_SPEED);
-			mvmnt.velocity = change;
+			mvmnt.velocity.add(change).scl(0.5f);
 		}
 
 		// now apply the velocity to the position
