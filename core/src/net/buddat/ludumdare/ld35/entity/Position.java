@@ -10,8 +10,8 @@ public class Position implements Component {
 	public Vector3 position;
 	public Vector3 rotation;
 
-	public Position(float x, float y, float z, float rX, float rY, float rZ) {
-		this.position = new Vector3(x, y, z);
-		this.rotation = new Vector3(rX, rY, rZ);
+	public Position(Vector3 position, Vector3 rotation) {
+		this.position = new Vector3(position);
+		this.rotation = new Vector3(rotation);
 	}
 }

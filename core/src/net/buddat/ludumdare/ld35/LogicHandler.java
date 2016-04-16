@@ -1,50 +1,57 @@
 package net.buddat.ludumdare.ld35;
 
-import com.badlogic.ashley.core.ComponentMapper;
-import com.badlogic.ashley.core.Engine;
-import com.badlogic.ashley.core.Entity;
-import com.badlogic.ashley.core.Family;
+import com.badlogic.ashley.core.*;
 import com.badlogic.ashley.utils.ImmutableArray;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 import net.buddat.ludumdare.ld35.entity.Position;
 import net.buddat.ludumdare.ld35.entity.Movement;
+import net.buddat.ludumdare.ld35.gfx.ModelFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class LogicHandler {
 	private Engine engine;
-	private static final int NUM_CREATURES = 10;
+	private static final int NUM_CREATURES = 5;
 	private Family creatures;
 	private Entity player;
+	private List<ModelInstance> models;
 	public static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
 	public static final ComponentMapper<Movement> MVMNT_MAPPER =
 			ComponentMapper.getFor(Movement.class);
+	public static final ComponentMapper<ModelComponent> MODEL_MAPPER =
+			ComponentMapper.getFor(ModelComponent.class);
+
 	private static final float PLAYER_EFFECT_RANGE = 1;
 	// Speed at which evasion is attempted
 	private static final float EVASION_SPEED = 1;
-	// Distance to calculate crowding
-	private static final float CROWDING_RANGE = 1;
-	private static final float CROWDING_SPEED = 1;
-	// Distance to calculate cohesion
-	private static final float COHESION_RANGE = 2;
-	private static final float COHESION_SPEED = 2;
+	// Distance to calculate crowding (^ 2 to avoid sqrt)
+	private static final float CROWDING_RANGE = 30;
+	private static final float CROWDING_SPEED = 0.5f;
+	// Distance to calculate cohesion (^ 2 to avoid sqrt)
+	private static final float COHESION_RANGE = 900;
+	private static final float COHESION_SPEED = 0.05f;
 
 	private static final float MAX_SPEED = 2;
 
 	public void init() {
 		engine = new Engine();
 		player = new Entity();
-		player.add(new Position(0, 0, 0, 0, 0, 0));
+		player.add(new Position(new Vector3(), new Vector3()));
 		player.add(new Movement(0, 0, 0, 0, 0, 0));
+		player.add(new Mouseable());
 		engine.addEntity(player);
 		for (int i = 0; i < NUM_CREATURES; i++) {
 			Entity creature = new Entity();
-			creature.add(new Position(i, 0, 0, 0, 0, 0));
+			creature.add(new Position(new Vector3(5f + 10f*i, 5f, 0f), new Vector3()));
 			creature.add(new Movement(0, 0, 0, 0, 0, 0));
-			engine.addEntity(new Entity());
+			engine.addEntity(creature);
 		}
-		creatures = Family.all(Position.class, Movement.class).get();
+		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
+		models = createModels(engine.getEntitiesFor(creatures));
 	}
 
 	public void update() {
@@ -53,7 +60,7 @@ public class LogicHandler {
 		float mousePosnY = 0;
 		float mousePosnZ = 0;
 		Position posn = POSN_MAPPER.get(player);
-		engine.getEntitiesFor(creatures);
+		calculateMovementChanges();
 	}
 
 	/**
@@ -64,7 +71,8 @@ public class LogicHandler {
 	private void calculateMovementChanges() {
 		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
 		Position playerPosn = POSN_MAPPER.get(player);
-		for (Entity entity : entities) {
+		for (int i = 0; i < entities.size(); i++) {
+			Entity entity = entities.get(i);
 			ArrayList<Entity> neighbours = new ArrayList<Entity>();
 			Position posn = POSN_MAPPER.get(entity);
 			Movement mvmnt = MVMNT_MAPPER.get(entity);
@@ -80,23 +88,59 @@ public class LogicHandler {
 			// Try to avoid crowding neighbors, yet keep in distance
 			Vector3 crowdingChange = new Vector3();
 			Vector3 cohesionChange = new Vector3();
-			for (Entity potentialNeighbor : entities) {
-				Position otherPosn = POSN_MAPPER.get(potentialNeighbor);
-				if (posn.position.dst2(otherPosn.position) <= CROWDING_RANGE) {
-					crowdingChange.add(new Vector3(otherPosn.position).sub(posn.position).nor());
+			ImmutableArray<Entity> potentialNeighbours = engine.getEntitiesFor(creatures);
+			for (int j = 0; j < potentialNeighbours.size(); j++) {
+				if (i == j) {
+					continue;
 				}
-				if (posn.position.dst2(otherPosn.position) <= COHESION_RANGE) {
-					cohesionChange.add(new Vector3(posn.position).sub(otherPosn.position)).nor();
+				Entity potentialNeighbor = potentialNeighbours.get(j);
+				Position otherPosn = POSN_MAPPER.get(potentialNeighbor);
+				float distance = posn.position.dst2(otherPosn.position);
+				if (distance <= CROWDING_RANGE) {
+					crowdingChange.add(new Vector3(posn.position).sub(otherPosn.position).nor());
+				}
+				if (distance <= COHESION_RANGE) {
+					cohesionChange.add(new Vector3(otherPosn.position).sub(posn.position).nor());
 				}
 			}
 			crowdingChange.nor().scl(CROWDING_SPEED);
 			cohesionChange.nor().scl(COHESION_SPEED);
 			change.add(crowdingChange).add(cohesionChange).clamp(0, MAX_SPEED);
+			mvmnt.velocity = change;
+		}
+
+		// now apply the velocity to the position
+		for (Entity entity : entities) {
+			Position posn = POSN_MAPPER.get(entity);
+			Vector3 change = MVMNT_MAPPER.get(entity).velocity;
 			posn.position.add(change);
+			MODEL_MAPPER.get(entity).model.transform.translate(change);
 		}
 	}
 
-	public ImmutableArray<Entity> getEntities() {
-		return engine.getEntitiesFor(creatures);
+	public List<ModelInstance> getModels() {
+		return models;
 	}
+
+	public List<ModelInstance> createModels(Iterable<Entity> entities) {
+		ArrayList<ModelInstance> models = new ArrayList<ModelInstance>();
+		for (Entity entity : entities) {
+			ModelInstance model = ModelFactory.createSphereModel(5f, 5f, 5f, Color.FIREBRICK, 16);
+			model.transform.setToTranslation(POSN_MAPPER.get(entity).position);
+			entity.add(new ModelComponent(model));
+			models.add(model);
+		}
+		return models;
+	}
+
+	// Simple reference to the model
+	private static class ModelComponent implements Component {
+		private ModelInstance model;
+		public ModelComponent(ModelInstance model) {
+			this.model = model;
+		}
+	}
+
+	// Differentiate player
+	private static class Mouseable implements Component {}
 }
