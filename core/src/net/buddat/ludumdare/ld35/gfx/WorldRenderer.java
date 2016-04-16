@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
@@ -39,8 +40,6 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	private final Array<ModelInstance> instances = new Array<ModelInstance>();
 	private final HashMap<ModelInstance, AnimationController> animations = new HashMap<ModelInstance, AnimationController>();
-
-	private AnimationController playerAnimation;
 
 	public WorldRenderer() {
 
@@ -74,8 +73,9 @@ public class WorldRenderer implements ProjectionTranslator {
 		
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
 
-		playerAnimation = new AnimationController(playerModelInstance);
+		AnimationController playerAnimation = new AnimationController(playerModelInstance);
 		playerAnimation.setAnimation(playerModelInstance.animations.first().id, -1);
+		animations.put(playerModelInstance, playerAnimation);
 
 		testModelInstance2.transform.setToTranslation(5f, 0f, 5f);
 		playerModelInstance.transform.setToTranslation(-5f, 0f, 5f);
@@ -88,7 +88,8 @@ public class WorldRenderer implements ProjectionTranslator {
 						instances.add(model);
 						
 						AnimationController anim = new AnimationController(model);
-						anim.setAnimation(model.animations.first().id, -1, (float) (Math.random() * 2f), null);
+						anim.setAnimation(model.animations.first().id, -1);
+						anim.update(MathUtils.random(anim.current.duration));
 						animations.put(model, anim);
 						
 						return model;
@@ -122,16 +123,16 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		shadowLight.setDirection(sunLight.direction);
 
-		playerAnimation.update(delta);
 		for (AnimationController a : animations.values())
- {
-			a.update((float) (delta * Math.random()));
+			a.update(delta);
 
-			if (Math.random() > 0.5f)
-				a.update((float) (delta * Math.random()));
-		}
+		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 0f,
+				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
+		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 75f,
+				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
+		playerCam.update();
 
-		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
+		System.out.println(GraphicsHandler.getLogicHandler().getPlayerPosn());
 	}
 
 	private static final float MIN_FRAME_LEN = 1f / GraphicsHandler.FPS_CAP;

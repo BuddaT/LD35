@@ -1,19 +1,21 @@
 package net.buddat.ludumdare.ld35;
 
-import com.badlogic.ashley.core.*;
+import java.util.ArrayList;
+
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Engine;
+import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
-import net.buddat.ludumdare.ld35.entity.FlockAttractor;
-import net.buddat.ludumdare.ld35.entity.Position;
-import net.buddat.ludumdare.ld35.entity.Movement;
-import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
-import net.buddat.ludumdare.ld35.gfx.ModelFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import net.buddat.ludumdare.ld35.entity.FlockAttractor;
+import net.buddat.ludumdare.ld35.entity.Movement;
+import net.buddat.ludumdare.ld35.entity.Position;
+import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 
 public class LogicHandler {
 	private Engine engine;
@@ -74,9 +76,9 @@ public class LogicHandler {
 		player.add(new Mouseable());
 		engine.addEntity(player);
 		for (int i = 0; i < NUM_CREATURES; i++) {
-			engine.addEntity(createNewCreature(new Vector3(5f + 10f*i, 5f, 0f), new Vector3()));
+			engine.addEntity(createNewCreature(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
 		}
-		engine.addEntity(createNewCreature(new Vector3(20f, 25f, 0f), new Vector3()));
+		engine.addEntity(createNewCreature(new Vector3(20f, 0f, 25f), new Vector3()));
 
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
 		flockAttractors = Family.all(FlockAttractor.class).get();
@@ -85,7 +87,8 @@ public class LogicHandler {
 	public void update() {
 		// Move the player towards the 3d position the mouse is pointing to?
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
-		worldMousePosn.z = 0;
+		worldMousePosn.z = worldMousePosn.y;
+		worldMousePosn.y = 0;
 		POSN_MAPPER.get(player).position.set(worldMousePosn);
 		calculateMovementChanges();
 	}
@@ -170,7 +173,7 @@ public class LogicHandler {
 
 	// Simple reference to the model
 	private static class ModelComponent implements Component {
-		private ModelInstance model;
+		private final ModelInstance model;
 		public ModelComponent(ModelInstance model) {
 			this.model = model;
 		}
