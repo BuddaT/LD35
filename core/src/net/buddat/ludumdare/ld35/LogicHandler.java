@@ -116,8 +116,6 @@ public class LogicHandler {
 				float acceleration = PLAYER_EFFECT_RANGE/(dist2ToPlayer * dist2ToPlayer);
 				Vector3 vectorAway = awayFrom(posn, playerPosn).nor().scl(acceleration);
 				change = awayFrom(posn, playerPosn).nor().scl(acceleration).clamp(0, EVASION_SPEED);
-				System.out.println(posn.position + " to " + playerPosn.position +
-						" = " + posn.position.dst2(playerPosn.position) + ", accel = " + acceleration);
 			} else {
 				change = new Vector3();
 			}
@@ -155,11 +153,13 @@ public class LogicHandler {
 		}
 
 		// now apply the changes to each position
+		Vector3 up = new Vector3(0, 1, 0);
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
 			Vector3 change = MVMNT_MAPPER.get(entity).velocity;
 			posn.position.add(change);
-			MODEL_MAPPER.get(entity).model.transform.translate(change);
+			ModelInstance model = MODEL_MAPPER.get(entity).model;
+			model.transform.setToLookAt(change, up).setTranslation(posn.position);
 		}
 	}
 
