@@ -14,7 +14,7 @@ import net.buddat.ludumdare.ld35.LogicHandler;
 
 public class UIRenderer {
 	
-	private static final boolean DEBUG_DRAW_COLLISIONS = true;
+	private static final boolean DEBUG_DRAW_COLLISIONS = false;
 
 	private SpriteBatch batch;
 	private BitmapFont font;

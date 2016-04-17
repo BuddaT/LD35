@@ -47,10 +47,6 @@ public class IntersectableModel extends ModelInstance {
 	public void updateCollisions() {
 		collision.setPosition(transform.getTranslation(new Vector3()).x, transform.getTranslation(new Vector3()).z);
 		collision.setRotation(transform.getRotation(new Quaternion()).getAngleAround(Vector3.Y));
-		
-		if (transform.getRotation(new Quaternion()).getAngleAround(Vector3.Y) != 0f)
-			collision.translate(0f, bounds.getWidth());
-		
 		collision.setScale(transform.getScaleX(), transform.getScaleZ());
 	}
 	
