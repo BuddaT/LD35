@@ -3,7 +3,6 @@ package net.buddat.ludumdare.ld35;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
@@ -13,12 +12,10 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
-import com.badlogic.gdx.math.collision.BoundingBox;
 import net.buddat.ludumdare.ld35.entity.AttractorType;
 import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
 import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
@@ -29,6 +26,7 @@ import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
 import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
 import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 import net.buddat.ludumdare.ld35.game.Level;
+import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
 import net.buddat.ludumdare.ld35.math.MovementCalculator;
 
@@ -299,22 +297,28 @@ public class LogicHandler {
 		Vector3 up = UP.copy();
 		float buffer = 0.01f;
 
-		Map<ModelInstance, BoundingBox> boxes = getCurrentLevel().getCollisionBoxes();
+		Array<IntersectableModel> boxes = getCurrentLevel().getCollisionModels();
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
 			Movement movement = MVMNT_MAPPER.get(entity);
 			// maybe we shouldn't be transforming it from within the logic
 			// but whatever. hack hack hack, hackity hack
-			ModelInstance model = MODEL_MAPPER.get(entity).model;
+			IntersectableModel model = MODEL_MAPPER.get(entity).model;
 			Vector2 start = createXZVector(posn.position);
 			Vector2 end = new Vector2(start).add(createXZVector(movement.velocity));
 			boolean collision = false;
-			for (ModelInstance boxModel : boxes.keySet()) {
+			for (IntersectableModel boxModel : boxes) {
 				if (boxModel == model) {
 					continue;
 				}
+				
+				if (boxModel.collision.contains(end)) {
+					collision = true;
+					break;
+				}
+				
 				// yuck
-				BoundingBox box = boxes.get(boxModel);
+				/*BoundingBox box = boxes.get(boxModel);
 				Vector2 topLeft = createXZVector(box.getCorner000(new Vector3()));
 				Vector2 topRight = createXZVector(box.getCorner100(new Vector3()));
 				Vector2 bottomLeft = createXZVector(box.getCorner001(new Vector3()));
@@ -341,7 +345,7 @@ public class LogicHandler {
 				if (Intersector.intersectSegments(bottomLeft, topLeft, start, end, intersection)) {
 					collision = true;
 					break;
-				}
+				}*/
 				// Does not intersect any bounding boxes
 			}
 			// Don't change position if it results in a collision
@@ -356,7 +360,7 @@ public class LogicHandler {
 			}
 			posn.rotation = lookDirection;
 			model.transform.setToLookAt(lookDirection, up).setTranslation(posn.position);
-			getCurrentLevel().updateBoundingBox(model);
+			model.updateCollisions();
 		}
 	}
 
@@ -367,7 +371,7 @@ public class LogicHandler {
 		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
 		
 		for (Entity entity : engine.getEntitiesFor(creatures)) {
-			ModelInstance model = modelProvider.createModel(entity, POSN_MAPPER.get(entity).position);
+			IntersectableModel model = modelProvider.createModel(entity, POSN_MAPPER.get(entity).position);
 			entity.add(new ModelComponent(model));
 		}
 	}
@@ -384,8 +388,8 @@ public class LogicHandler {
 
 	// Simple reference to the model
 	public static class ModelComponent implements Component {
-		public final ModelInstance model;
-		public ModelComponent(ModelInstance model) {
+		public final IntersectableModel model;
+		public ModelComponent(IntersectableModel model) {
 			this.model = model;
 		}
 	}
@@ -395,7 +399,7 @@ public class LogicHandler {
 	}
 
 	public interface ModelInstanceProvider {
-		ModelInstance createModel(Entity e, Vector3 position);
+		IntersectableModel createModel(Entity e, Vector3 position);
 	}
 
 	private interface AttractorProvider {

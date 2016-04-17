@@ -38,7 +38,7 @@ public class WorldRenderer implements ProjectionTranslator {
 	private ModelBatch shadowBatch;
 
 	private ModelBatch modelBatch;
-	private ModelInstance worldModelInstance, testModelInstance, testModelInstance2, testModelInstance3, wolfInstance,
+	private IntersectableModel worldModelInstance, testModelInstance, testModelInstance2, testModelInstance3, wolfInstance,
 			playerModelInstance;
 
 	private PerspectiveCamera playerCam, sunCam;
@@ -96,8 +96,8 @@ public class WorldRenderer implements ProjectionTranslator {
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
 					@Override
-					public ModelInstance createModel(Entity e, Vector3 position) {
-						ModelInstance model;
+					public IntersectableModel createModel(Entity e, Vector3 position) {
+						IntersectableModel model;
 						if (e.getComponent(Predator.class) != null)
 							model = ModelFactory.createCustomModel(GraphicsHandler.MDL_WOLF);
 						else
@@ -141,7 +141,10 @@ public class WorldRenderer implements ProjectionTranslator {
 			a.update(delta);
 
 		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
+		playerModelInstance.updateCollisions();
+		
 		worldModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
+		
 		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, CAMERA_HEIGHT,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().z);
 		playerCam.update();
@@ -184,6 +187,10 @@ public class WorldRenderer implements ProjectionTranslator {
 	
 	public Level getCurrentLevel() {
 		return currentLevel;
+	}
+	
+	public IntersectableModel getPlayerModel() {
+		return playerModelInstance;
 	}
 
 	@Override

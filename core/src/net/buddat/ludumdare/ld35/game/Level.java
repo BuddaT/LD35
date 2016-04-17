@@ -1,11 +1,8 @@
 package net.buddat.ludumdare.ld35.game;
 
-import java.util.HashMap;
-
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -15,6 +12,7 @@ import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
 import net.buddat.ludumdare.ld35.entity.Movement;
 import net.buddat.ludumdare.ld35.entity.Position;
+import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
 import net.buddat.ludumdare.ld35.gfx.ModelFactory;
 
 public class Level {
@@ -27,17 +25,13 @@ public class Level {
 	private final float complexity;
 	private final float hiddenSheepChance;
 
-	private final Array<ModelInstance> collisions = new Array<ModelInstance>();
-	private final HashMap<ModelInstance, BoundingBox> collisionBoxes = new HashMap<ModelInstance, BoundingBox>();
+	private final Array<IntersectableModel> collisions = new Array<IntersectableModel>();
 
-	private BoundingBox sheepPen;
-	private ModelInstance sheepPenModel;
+	private IntersectableModel sheepPenModel;
 	
-	private Array<BoundingBox> wolfTB;
-	private Array<ModelInstance> wolfMB;
+	private Array<IntersectableModel> wolfMB;
 	
-	private BoundingBox mapBox;
-	private ModelInstance mapModel;
+	private IntersectableModel mapModel;
 
 	private final Engine engine;
 	private Entity player;
@@ -91,61 +85,29 @@ public class Level {
 		}
 	}
 
-	private ModelInstance newCollision(float x, float y, float z, float scale, float rotation, String model) {
-		ModelInstance c = ModelFactory.createCustomModel(model);
+	private IntersectableModel newCollision(float x, float y, float z, float scale, float rotation, String model) {
+		IntersectableModel c = ModelFactory.createCustomModel(model);
 		c.transform.setToTranslation(x, y, z).rotate(Vector3.Y, rotation).scale(scale, scale, scale);
-
-		addCollisionBox(c, c.calculateBoundingBox(new BoundingBox()));
-		
-		updateBoundingBox(c);
 
 		return c;
 	}
-	
-	public void updateBoundingBox(ModelInstance m) {
-		if (collisionBoxes.containsKey(m)) {
-			updateBoundingBox(m, collisionBoxes.get(m));
-		} else {
-			addCollisionBox(m, m.calculateBoundingBox(new BoundingBox()));
-			updateBoundingBox(m);
-		}
-	}
-	
-	public static void updateBoundingBox(ModelInstance m, BoundingBox b) {
-		b.set(b.min.add(m.transform.getTranslation(Vector3.X)), b.max.add(m.transform.getTranslation(Vector3.X)));
-	}
 
-	public void addCollisionModel(ModelInstance c) {
+	public void addCollisionModel(IntersectableModel c) {
 		if (collisions.contains(c, false))
 			return;
 
 		collisions.add(c);
 	}
 
-	public void addCollisionBox(ModelInstance m, BoundingBox b) {
-		if (collisionBoxes.containsKey(m))
-			return;
-
-		collisionBoxes.put(m, b);
-	}
-
-	public Array<ModelInstance> getCollisionModels() {
+	public Array<IntersectableModel> getCollisionModels() {
 		return collisions;
 	}
 
-	public HashMap<ModelInstance, BoundingBox> getCollisionBoxes() {
-		return collisionBoxes;
-	}
-	
-	public BoundingBox getSheepPenBoundingBox() {
-		return sheepPen;
-	}
-
-	public ModelInstance getSheepPenModel() {
+	public IntersectableModel getSheepPenModel() {
 		return sheepPenModel;
 	}
 	
-	public Array<ModelInstance> getWolfTransformModels() {
+	public Array<IntersectableModel> getWolfTransformModels() {
 		return wolfMB;
 	}
 
@@ -163,8 +125,6 @@ public class Level {
 	}
 	
 	private void createTree(float mapSize, float weight) {
-		BoundingBox treeBB = new BoundingBox();
-		
 		boolean okay = true;
 		
 		float penLocX = 0;
@@ -172,7 +132,7 @@ public class Level {
 		
 		String treeType = (MathUtils.randomBoolean(weight) ? GraphicsHandler.MDL_TREE1 : GraphicsHandler.MDL_TREE2);
 		
-		ModelInstance treeInstance = ModelFactory.createCustomModel(treeType);
+		IntersectableModel treeInstance = ModelFactory.createCustomModel(treeType);
 		do {
 			okay = true;
 			
@@ -181,34 +141,30 @@ public class Level {
 			
 			treeInstance.transform.setToTranslation(penLocX, 0f, penLocZ);
 			
-			treeBB = treeInstance.calculateBoundingBox(treeBB);
-			updateBoundingBox(treeInstance, treeBB);
-			
-			for (BoundingBox b : collisionBoxes.values())
-				if (b.intersects(treeBB)) {
+			for (IntersectableModel b : collisions)
+				if (b.intersects(treeInstance)) {
 					okay = false;
 					break;
 				}
 			
 			if (okay) {
-				if (treeBB.intersects(sheepPen))
+				if (treeInstance.intersects(sheepPenModel))
 					okay = false;
-				for (BoundingBox b : wolfTB)
-					if (treeBB.intersects(b))
+				for (IntersectableModel b : wolfMB)
+					if (treeInstance.intersects(b))
 						okay = false;
 			}
 		} while (!okay);
 		
-		addCollisionModel(newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(2f), 360f * MathUtils.random(), treeType));
+		// addCollisionModel(newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(2f), 360f * MathUtils.random(), treeType));
+		addCollisionModel(newCollision(penLocX, 0f, penLocZ, 1f, 0f, treeType));
 	}
 	
 	private void createWolfTransform(float mapSize) {
-		wolfTB = new Array<BoundingBox>();
-		wolfMB = new Array<ModelInstance>();
+		wolfMB = new Array<IntersectableModel>();
 		
 		for (int i = 0; i < mapSize / 50f; i++) {
-			BoundingBox wolfBB = new BoundingBox();
-			ModelInstance wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
+			IntersectableModel wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
 			
 			do {
 				float penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
@@ -216,11 +172,8 @@ public class Level {
 				
 				wolfTransform.transform.setToTranslation(penLocX, 0f, penLocZ);
 				
-				wolfBB = wolfTransform.calculateBoundingBox(wolfBB);
-				updateBoundingBox(wolfTransform, wolfBB);
-			} while (ModelFactory.intersectsWith(wolfBB, sheepPen) || !mapBox.contains(wolfBB));
+			} while (wolfTransform.intersects(sheepPenModel) || !mapModel.contains(wolfTransform));
 			
-			wolfTB.add(wolfBB);
 			wolfMB.add(wolfTransform);
 		}
 	}
@@ -239,9 +192,7 @@ public class Level {
 			penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
 			
 			sheepPenModel.transform.setTranslation(penLocX, 0, penLocZ);
-			sheepPen = sheepPenModel.calculateBoundingBox((sheepPen = new BoundingBox()));
-			updateBoundingBox(sheepPenModel, sheepPen);
-		} while(!mapBox.contains(sheepPen));
+		} while(!mapModel.contains(sheepPenModel));
 
 		int entryPoint = MathUtils.random(penW - 1);
 		boolean x = false;
@@ -317,12 +268,8 @@ public class Level {
 	}
 	
 	private void createBounds(float mapSize) {
-		mapBox = new BoundingBox();
-		
 		mapModel = ModelFactory.createBoxModel(mapSize, 0.5f, mapSize, new Color(0.2f, 0.2f, 0.8f, 1f));
 		mapModel.transform.setTranslation(0, 0, 0);
-		
-		mapBox = mapModel.calculateBoundingBox((mapBox = new BoundingBox()));
 		
 		BoundingBox fenceB = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1).model
 				.calculateBoundingBox(new BoundingBox());
@@ -344,7 +291,5 @@ public class Level {
 			addCollisionModel(newCollision(((penW / 2f) * fenceB.getWidth()), 0,
 					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 		}
-		
-		updateBoundingBox(mapModel, mapBox);
 	}
 }
