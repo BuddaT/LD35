@@ -197,7 +197,8 @@ public class LogicHandler {
 	}
 
 	// Differentiate player
-	private static class Mouseable implements Component {}
+	public static class Mouseable implements Component {
+	}
 
 	public interface ModelInstanceProvider {
 		ModelInstance createModel(Vector3 position);

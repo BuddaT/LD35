@@ -21,10 +21,12 @@ import com.badlogic.gdx.utils.Array;
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
 import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
+import net.buddat.ludumdare.ld35.game.Level;
 
 public class WorldRenderer implements ProjectionTranslator {
 
 	private static final float SUN_MOVEMENT_SPEED = 0.001f;
+	private static final float CAMERA_HEIGHT = 100f;
 
 	private Environment worldEnvironment;
 
@@ -44,13 +46,15 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	private final HashMap<ModelInstance, AnimationController> animations = new HashMap<ModelInstance, AnimationController>();
 
+	private Level testLevel;
+
 	public WorldRenderer() {
 
 	}
 
 	public void create() {
 		playerCam = new PerspectiveCamera(75, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		playerCam.position.set(0f, 30f, 0f);
+		playerCam.position.set(0f, CAMERA_HEIGHT, 0f);
 		playerCam.lookAt(0, 0, 0);
 		playerCam.near = 1f;
 		playerCam.far = 300f;
@@ -70,7 +74,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		modelBatch = new ModelBatch();
 		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
-		worldModelInstance = ModelFactory.createBoxModel(500f, 0.2f, 500f, Color.FOREST);
+		worldModelInstance = ModelFactory.createBoxModel(100f, 0.25f, 100f, Color.FOREST);
 		testModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1);
 		testModelInstance2 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TREE1);
 		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TREE2);
@@ -98,6 +102,9 @@ public class WorldRenderer implements ProjectionTranslator {
 						model.transform.setToTranslation(position);
 						instances.add(model);
 						
+						if (MathUtils.randomBoolean(0.5f))
+							model.materials.get(1).set(ColorAttribute.createDiffuse(Color.RED));
+
 						AnimationController anim = new AnimationController(model);
 						anim.setAnimation(model.animations.first().id, -1);
 						anim.update(MathUtils.random(anim.current.duration));
@@ -115,17 +122,21 @@ public class WorldRenderer implements ProjectionTranslator {
 
 				ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_GRASS);
 				model.transform.setToTranslation(-250f + (i * 5f), 0f, -250f + (j * 5f));
-				model.transform.rotate(Vector3.Y, MathUtils.random() * 180f);
+				model.transform.rotate(Vector3.Y, MathUtils.random() * 360f);
 
 				noshadowInstance.add(model);
 			}
 
 		instances.add(worldModelInstance);
-		instances.add(testModelInstance);
+		/*instances.add(testModelInstance);
 		instances.add(testModelInstance2);
 		instances.add(testModelInstance3);
-		instances.add(wolfInstance);
+		instances.add(wolfInstance);*/
 		instances.add(playerModelInstance);
+
+		testLevel = new Level(10, 10, 1.0f);
+		instances.addAll(testLevel.getCollisionModels());
+		instances.add(testLevel.getSheepPenModel());
 	}
 
 	private boolean reverseY = false;
@@ -152,7 +163,8 @@ public class WorldRenderer implements ProjectionTranslator {
 			a.update(delta);
 
 		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
-		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 30f,
+		worldModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
+		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, CAMERA_HEIGHT,
 				GraphicsHandler.getLogicHandler().getPlayerPosn().z);
 		playerCam.update();
 	}
@@ -160,6 +172,7 @@ public class WorldRenderer implements ProjectionTranslator {
 	private static final float MIN_FRAME_LEN = 1f / GraphicsHandler.FPS_CAP;
 	private float timeSinceLastRender = 0;
 
+	@SuppressWarnings("deprecation")
 	public void render() {
 		timeSinceLastRender += Gdx.graphics.getDeltaTime();
 		if (timeSinceLastRender < MIN_FRAME_LEN)
@@ -168,7 +181,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-		shadowLight.begin(playerCam.position.add(0f, -60f, 0f), playerCam.direction);
+		shadowLight.begin(playerCam.position.cpy().add(0f, -60f, 0f), playerCam.direction);
 		shadowBatch.begin(shadowLight.getCamera());
 
 		shadowBatch.render(instances);
