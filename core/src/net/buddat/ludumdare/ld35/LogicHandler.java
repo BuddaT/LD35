@@ -3,6 +3,7 @@ package net.buddat.ludumdare.ld35;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
@@ -13,8 +14,11 @@ import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
+import com.badlogic.gdx.math.collision.BoundingBox;
 import net.buddat.ludumdare.ld35.entity.AttractorType;
 import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
 import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
@@ -24,6 +28,7 @@ import net.buddat.ludumdare.ld35.entity.Position;
 import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
 import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
 import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
+import net.buddat.ludumdare.ld35.game.Level;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
 import net.buddat.ludumdare.ld35.math.MovementCalculator;
 
@@ -173,9 +178,13 @@ public class LogicHandler {
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
 	}
 
+	private Level getCurrentLevel() {
+		return GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel();
+	}
+
 	public void update() {
-		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
-		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
+		Engine engine = getCurrentLevel().getEngine();
+		Entity player = getCurrentLevel().getPlayer();
 		
 		// Move the player towards the 3d position the mouse is pointing to?
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
@@ -276,30 +285,84 @@ public class LogicHandler {
 		movement.rotation.set(change).nor();
 	}
 
+	private Vector2 createXZVector(Vector3 vector3) {
+		return new Vector2(vector3.x, vector3.z);
+	}
+
 	/**
-	 * Applies movement changes to positions
+	 * Applies movement changes to positions IFF the entity is not moving into
+	 * the bounding box of another.
 	 * @param entities All entities to be moved
 	 */
 	public void applyMovementChanges(ImmutableArray<Entity> entities) {
 		// now apply the changes to each position
 		Vector3 up = UP.copy();
+		float buffer = 0.01f;
 
+		Map<ModelInstance, BoundingBox> boxes = getCurrentLevel().getCollisionBoxes();
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
 			Movement movement = MVMNT_MAPPER.get(entity);
-			posn.position.add(movement.velocity);
 			// maybe we shouldn't be transforming it from within the logic
 			// but whatever. hack hack hack, hackity hack
 			ModelInstance model = MODEL_MAPPER.get(entity).model;
+			Vector2 start = createXZVector(posn.position);
+			Vector2 end = new Vector2(start).add(createXZVector(movement.velocity));
+			boolean collision = false;
+			for (ModelInstance boxModel : boxes.keySet()) {
+				if (boxModel == model) {
+					continue;
+				}
+				// yuck
+				BoundingBox box = boxes.get(boxModel);
+				Vector2 topLeft = createXZVector(box.getCorner000(new Vector3()));
+				Vector2 topRight = createXZVector(box.getCorner100(new Vector3()));
+				Vector2 bottomLeft = createXZVector(box.getCorner001(new Vector3()));
+				Vector2 bottomRight = createXZVector(box.getCorner101(new Vector3()));
+				// Does the movement vector cross through the bounding box?
+				// Assumes we are not already inside a bounding box
+				Vector2 intersection = new Vector2();
+				ArrayList<Vector2> intersections = new ArrayList<Vector2>();
+				if (Intersector.intersectSegments(topLeft, topRight, start, end, intersection)) {
+					collision = true;
+					break;
+				}
+				intersection = new Vector2();
+				if (Intersector.intersectSegments(topRight, bottomRight, start, end, intersection)) {
+					collision = true;
+					break;
+				}
+				intersection = new Vector2();
+				if (Intersector.intersectSegments(bottomRight, bottomLeft, start, end, intersection)) {
+					collision = true;
+					break;
+				}
+				intersection = new Vector2();
+				if (Intersector.intersectSegments(bottomLeft, topLeft, start, end, intersection)) {
+					collision = true;
+					break;
+				}
+				// Does not intersect any bounding boxes
+			}
+			// Don't change position if it results in a collision
+			if (collision) {
+				continue;
+			}
+
+			posn.position.add(movement.velocity);
 			Vector3 lookDirection = movementCalculator.calculateNewDirection(posn.rotation, movement.rotation);
 			if (lookDirection.isZero()) {
 				System.out.println("zero lookdirection");
 			}
 			posn.rotation = lookDirection;
 			model.transform.setToLookAt(lookDirection, up).setTranslation(posn.position);
+			getCurrentLevel().updateBoundingBox(model);
 		}
 	}
 
+	/**
+	 * 	Creates models for each of the creatures, using the callback and assigning models to each creature
+	 */
 	public void createCreatures(ModelInstanceProvider modelProvider) {
 		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
 		
