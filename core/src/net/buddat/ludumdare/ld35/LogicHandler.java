@@ -30,7 +30,6 @@ import net.buddat.ludumdare.ld35.math.MovementCalculator;
 public class LogicHandler {
 	private static final int NUM_CREATURES = 5;
 	private Family creatures;
-	private Family sheep;
 	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
 	private static final ComponentMapper<Movement> MVMNT_MAPPER =
@@ -172,7 +171,6 @@ public class LogicHandler {
 
 	public void init() {
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
-		sheep = Family.all(Prey.class).get();
 	}
 
 	public void update() {
