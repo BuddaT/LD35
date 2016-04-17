@@ -8,7 +8,7 @@ public abstract class AttractionProvider {
 
 	public abstract float getMaxRange();
 
-	public AttractantType getType() {
-		return AttractantType.GENERAL;
+	public AttractorType getType() {
+		return AttractorType.GENERAL;
 	}
 }

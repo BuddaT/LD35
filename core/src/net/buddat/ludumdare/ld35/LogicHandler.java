@@ -2,6 +2,7 @@ package net.buddat.ludumdare.ld35;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
@@ -15,77 +16,72 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 
 import net.buddat.ludumdare.ld35.entity.*;
-import org.w3c.dom.Attr;
 
 public class LogicHandler {
 	private Engine engine;
 	private static final int NUM_CREATURES = 5;
 	private Family creatures;
-	private Family flockAttractors;
+	private Family sheep;
 	private Entity player;
-	public static final ComponentMapper<Position> POSN_MAPPER =
+	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
-	public static final ComponentMapper<Movement> MVMNT_MAPPER =
+	private static final ComponentMapper<Movement> MVMNT_MAPPER =
 			ComponentMapper.getFor(Movement.class);
-	public static final ComponentMapper<ModelComponent> MODEL_MAPPER =
+	private static final ComponentMapper<ModelComponent> MODEL_MAPPER =
 			ComponentMapper.getFor(ModelComponent.class);
-	public static final ComponentMapper<FlockAttractor> ATTRACTOR_MAPPER =
-			ComponentMapper.getFor(FlockAttractor.class);
+	private static final ComponentMapper<CrowdingAttractor> CROWDING_MAPPER =
+			ComponentMapper.getFor(CrowdingAttractor.class);
+	private static final ComponentMapper<CohesionAttractor> COHESION_MAPPER =
+			ComponentMapper.getFor(CohesionAttractor.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
 	// Speed at which evasion is attempted
 	private static final float EVASION_SPEED = 5;
-	// Distance to calculate crowding (^ 2 to avoid sqrt)
-	private static final float CROWDING_RANGE = 10*10;
-	private static final float CROWDING_SPEED = 0.5f;
 
 	// Distance to calculate cohesion (^ 2 to avoid sqrt)
 	private static final float COHESION_RANGE = 30*30;
 	private static final float COHESION_SPEED = 0.05f;
 
 	private static final float MAX_SPEED = 2;
-	private static final EnumMap<AttractantType, Float> FLOCK_ATTRACTANT_SPEEDS;
+	private static final EnumMap<AttractorType, Float> PREY_ATTRACTOR_SPEEDS;
 	static {
-		EnumMap<AttractantType, Float> speeds =
-				new EnumMap<AttractantType, Float>(AttractantType.class);
-		speeds.put(AttractantType.CROWDING, 0.5f);
-		speeds.put(AttractantType.COHESION, 0.05f);
-		speeds.put(AttractantType.PLAYER, EVASION_SPEED);
-		speeds.put(AttractantType.PREDATOR, EVASION_SPEED);
-		for (AttractantType type : AttractantType.values()) {
+		EnumMap<AttractorType, Float> speeds =
+				new EnumMap<AttractorType, Float>(AttractorType.class);
+		speeds.put(AttractorType.CROWDING, 0.5f);
+		speeds.put(AttractorType.COHESION, 0.05f);
+		speeds.put(AttractorType.PLAYER, EVASION_SPEED);
+		speeds.put(AttractorType.PREDATOR, EVASION_SPEED);
+		for (AttractorType type : AttractorType.values()) {
 			if (speeds.get(type) == null) {
 				speeds.put(type, 0.05f);
 			}
 		}
-		FLOCK_ATTRACTANT_SPEEDS = speeds;
+		PREY_ATTRACTOR_SPEEDS = speeds;
 	}
 
 	private ProjectionTranslator projectionTranslator;
 
-	private Entity createNewCreature(Vector3 position, Vector3 rotation) {
+	private class Prey implements Component {};
+
+	private Entity createNewPrey(Vector3 position, Vector3 rotation) {
 		Entity creature = new Entity();
 		creature.add(new Position(position, rotation));
 		creature.add(new Movement(0, 0, 0, 0, 0, 0));
-		AttractionProvider attractionProvider = new AttractionProvider() {
-			@Override
-			public float getAcceleration(float distance) {
-				return -CROWDING_RANGE/(distance*distance);
-			}
-
-			@Override
-			public float getMaxRange() {
-				return CROWDING_RANGE;
-			}
-
-			@Override
-			public AttractantType getType() {
-				return AttractantType.CROWDING;
-			}
-		};
-		FlockAttractor creatureFlockAttractor = new FlockAttractor(attractionProvider);
+		CrowdingAttractor creatureFlockAttractor = new CrowdingAttractor();
 		creature.add(creatureFlockAttractor);
+		creature.add(new Prey());
 		return creature;
+	}
+
+	private List<FlockAttractor> getPreyAttractors(Entity entity) {
+		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
+		FlockAttractor crowdingAttractor = CROWDING_MAPPER.get(entity);
+		if (crowdingAttractor != null) {
+			attractors.add(CROWDING_MAPPER.get(entity));
+		}
+		// attractors.add(COHESION_MAPPER.get(entity));
+		return attractors;
 	}
 
 	public void init() {
@@ -97,12 +93,12 @@ public class LogicHandler {
 
 		engine.addEntity(player);
 		for (int i = 0; i < NUM_CREATURES; i++) {
-			engine.addEntity(createNewCreature(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
+			engine.addEntity(createNewPrey(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
 		}
-		engine.addEntity(createNewCreature(new Vector3(20f, 0f, 25f), new Vector3()));
+		engine.addEntity(createNewPrey(new Vector3(20f, 0f, 25f), new Vector3()));
 
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
-		flockAttractors = Family.all(FlockAttractor.class).get();
+		sheep = Family.all(Prey.class).get();
 	}
 
 	public void update() {
@@ -140,20 +136,19 @@ public class LogicHandler {
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
 			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
 				float acceleration = PLAYER_EFFECT_RANGE/(dist2ToPlayer * dist2ToPlayer);
-				Vector3 vectorAway = awayFrom(posn, playerPosn).nor().scl(acceleration);
 				change = awayFrom(posn, playerPosn).nor().scl(acceleration).clamp(0, EVASION_SPEED);
 			} else {
 				change = new Vector3();
 			}
-			Vector3 crowdingChange = new Vector3();
 			Vector3 cohesionChange = new Vector3();
 
 			// Try to avoid crowding neighbors, yet keep in distance
-			ImmutableArray<Entity> others = engine.getEntitiesFor(flockAttractors);
-			EnumMap<AttractantType, Vector3> attractants =
-					new EnumMap<AttractantType, Vector3>(AttractantType.class);
-			for (AttractantType attractantType : AttractantType.values()) {
-				attractants.put(attractantType, new Vector3());
+			ImmutableArray<Entity> others = engine.getEntitiesFor(sheep);
+			// Get all the possible attractor types
+			EnumMap<AttractorType, Vector3> attractors =
+					new EnumMap<AttractorType, Vector3>(AttractorType.class);
+			for (AttractorType attractorType : AttractorType.values()) {
+				attractors.put(attractorType, new Vector3());
 			}
 			for (int j = 0; j < others.size(); j++) {
 				if (i == j) {
@@ -164,11 +159,12 @@ public class LogicHandler {
 				float distance = posn.position.dst2(otherPosn.position);
 				// Crowding mechanic means that entities acceleration away from
 				// neighbors increases the closer you are
-				FlockAttractor attractor = ATTRACTOR_MAPPER.get(entity);
-				if (distance <= attractor.getMaxRange()) {
-					float acceleration = ATTRACTOR_MAPPER.get(entity).getAcceleration(distance);
-					Vector3 direction = towards(posn, otherPosn).nor();
-					attractants.get(attractor.getAttractantType()).add(direction.scl(acceleration));
+				for (FlockAttractor attractor : getPreyAttractors(entity)) {
+					if (distance <= attractor.getMaxRange()) {
+						float acceleration = attractor.getAcceleration(distance);
+						Vector3 direction = towards(posn, otherPosn).nor();
+						attractors.get(attractor.getAttractantType()).add(direction.scl(acceleration));
+					}
 				}
 				if (distance <= COHESION_RANGE) {
 					cohesionChange.add(towards(posn, otherPosn).nor());
@@ -176,12 +172,12 @@ public class LogicHandler {
 			}
 			cohesionChange.clamp(0, COHESION_SPEED);
 
-			for (AttractantType attractantType : AttractantType.values()) {
-				if (!(attractantType.equals(AttractantType.CROWDING))) {
+			for (AttractorType attractorType : AttractorType.values()) {
+				if (!(attractorType.equals(AttractorType.CROWDING))) {
 					continue;
 				}
-				Vector3 attractantChange = attractants.get(attractantType);
-				change.add(attractantChange.clamp(0, FLOCK_ATTRACTANT_SPEEDS.get(attractantType)));
+				Vector3 attractantChange = attractors.get(attractorType);
+				change.add(attractantChange.clamp(0, PREY_ATTRACTOR_SPEEDS.get(attractorType)));
 			}
 
 			change.add(cohesionChange);

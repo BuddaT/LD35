@@ -5,20 +5,10 @@ import com.badlogic.ashley.core.Component;
 /**
  * Attracts flock entities. Negative attraction acts as repellant.
  */
-public class FlockAttractor implements Component {
-	private final AttractionProvider provider;
-	public FlockAttractor(AttractionProvider provider) {
-		this.provider = provider;
-	}
-	public float getAcceleration(float distance) {
-		return provider.getAcceleration(distance);
-	}
+public abstract class FlockAttractor implements Component {
+	public abstract float getAcceleration(float distance);
 
-	public float getMaxRange() {
-		return provider.getMaxRange();
-	}
+	public abstract float getMaxRange();
 
-	public AttractantType getAttractantType() {
-		return provider.getType();
-	}
+	public abstract AttractorType getAttractantType();
 }
