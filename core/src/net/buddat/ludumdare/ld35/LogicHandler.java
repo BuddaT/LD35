@@ -15,14 +15,18 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 
-import net.buddat.ludumdare.ld35.entity.*;
+import net.buddat.ludumdare.ld35.entity.AttractorType;
+import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
+import net.buddat.ludumdare.ld35.entity.CrowdingAttractor;
+import net.buddat.ludumdare.ld35.entity.FlockAttractor;
+import net.buddat.ludumdare.ld35.entity.Movement;
+import net.buddat.ludumdare.ld35.entity.Position;
+import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 
 public class LogicHandler {
-	private Engine engine;
 	private static final int NUM_CREATURES = 5;
 	private Family creatures;
 	private Family sheep;
-	private Entity player;
 	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
 	private static final ComponentMapper<Movement> MVMNT_MAPPER =
@@ -64,7 +68,7 @@ public class LogicHandler {
 
 	private class Prey implements Component {};
 
-	private Entity createNewPrey(Vector3 position, Vector3 rotation) {
+	public Entity createNewPrey(Vector3 position, Vector3 rotation) {
 		Entity creature = new Entity();
 		creature.add(new Position(position, rotation));
 		creature.add(new Movement(0, 0, 0, 0, 0, 0));
@@ -90,23 +94,14 @@ public class LogicHandler {
 	}
 
 	public void init() {
-		engine = new Engine();
-		player = new Entity();
-		player.add(new Position(new Vector3(), new Vector3()));
-		player.add(new Movement(0, 0, 0, 0, 0, 0));
-		player.add(new Mouseable());
-
-		engine.addEntity(player);
-		for (int i = 0; i < NUM_CREATURES; i++) {
-			engine.addEntity(createNewPrey(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
-		}
-		engine.addEntity(createNewPrey(new Vector3(20f, 0f, 25f), new Vector3()));
-
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
 		sheep = Family.all(Prey.class).get();
 	}
 
 	public void update() {
+		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
+		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
+		
 		// Move the player towards the 3d position the mouse is pointing to?
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
 		POSN_MAPPER.get(player).position.set(worldMousePosn);
@@ -126,6 +121,9 @@ public class LogicHandler {
 	 * Partitioning by location would improve this.
 	 */
 	private void calculateMovementChanges() {
+		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
+		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
+		
 		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
 		Position playerPosn = POSN_MAPPER.get(player);
 
@@ -212,6 +210,8 @@ public class LogicHandler {
 	}
 
 	public void createCreatures(ModelInstanceProvider modelProvider) {
+		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
+		
 		for (Entity entity : engine.getEntitiesFor(creatures)) {
 			ModelInstance model = modelProvider.createModel(POSN_MAPPER.get(entity).position);
 			entity.add(new ModelComponent(model));
@@ -223,6 +223,8 @@ public class LogicHandler {
 	}
 
 	public Vector3 getPlayerPosn() {
+		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
+		
 		return new Vector3(POSN_MAPPER.get(player).position);
 	}
 

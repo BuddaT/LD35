@@ -46,7 +46,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	private final HashMap<ModelInstance, AnimationController> animations = new HashMap<ModelInstance, AnimationController>();
 
-	private Level testLevel;
+	private Level currentLevel;
 
 	public WorldRenderer() {
 
@@ -94,6 +94,31 @@ public class WorldRenderer implements ProjectionTranslator {
 		testModelInstance2.transform.setToTranslation(-10f, 0f, -10f);
 		testModelInstance3.transform.setToTranslation(-10f, 0f, 10f);
 
+		for (int i = 0; i < 100; i++)
+			for (int j = 0; j < 100; j++) {
+				if (MathUtils.randomBoolean(0.5f))
+					continue;
+
+				ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_GRASS);
+				model.transform.setToTranslation(-250f + (i * 5f), 0f, -250f + (j * 5f));
+				model.transform.rotate(Vector3.Y, MathUtils.random() * 360f);
+
+				noshadowInstance.add(model);
+			}
+
+		instances.add(worldModelInstance);
+		/*instances.add(testModelInstance);
+		instances.add(testModelInstance2);
+		instances.add(testModelInstance3);
+		instances.add(wolfInstance);*/
+		instances.add(playerModelInstance);
+
+		currentLevel = new Level(10, 10, 1.0f);
+		
+		instances.addAll(currentLevel.getCollisionModels());
+		instances.add(currentLevel.getSheepPenModel());
+		instances.add(currentLevel.getWolfTransformModel());
+		
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
 					@Override
@@ -114,30 +139,6 @@ public class WorldRenderer implements ProjectionTranslator {
 					}
 				});
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
-
-		for (int i = 0; i < 100; i++)
-			for (int j = 0; j < 100; j++) {
-				if (MathUtils.randomBoolean(0.5f))
-					continue;
-
-				ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_GRASS);
-				model.transform.setToTranslation(-250f + (i * 5f), 0f, -250f + (j * 5f));
-				model.transform.rotate(Vector3.Y, MathUtils.random() * 360f);
-
-				noshadowInstance.add(model);
-			}
-
-		instances.add(worldModelInstance);
-		/*instances.add(testModelInstance);
-		instances.add(testModelInstance2);
-		instances.add(testModelInstance3);
-		instances.add(wolfInstance);*/
-		instances.add(playerModelInstance);
-
-		testLevel = new Level(10, 10, 1.0f);
-		instances.addAll(testLevel.getCollisionModels());
-		instances.add(testLevel.getSheepPenModel());
-		instances.add(testLevel.getWolfTransformModel());
 	}
 
 	private boolean reverseY = false;
@@ -203,6 +204,10 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	public void dispose() {
 		modelBatch.dispose();
+	}
+	
+	public Level getCurrentLevel() {
+		return currentLevel;
 	}
 
 	@Override

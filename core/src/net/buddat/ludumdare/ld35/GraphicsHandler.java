@@ -78,6 +78,10 @@ public class GraphicsHandler extends ApplicationAdapter {
 	public AssetManager getAssets() {
 		return assets;
 	}
+	
+	public WorldRenderer getWorldRenderer() {
+		return worldRenderer;
+	}
 
 	public static LogicHandler getLogicHandler() {
 		if (logicHandler == null)
