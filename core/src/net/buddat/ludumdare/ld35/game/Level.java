@@ -34,6 +34,9 @@ public class Level {
 	
 	private BoundingBox wolfTB;
 	private ModelInstance wolfTransform;
+	
+	private BoundingBox mapBox;
+	private ModelInstance mapModel;
 
 	private final Engine engine;
 	private Entity player;
@@ -56,6 +59,8 @@ public class Level {
 
 		engine.addEntity(player);
 
+		createBounds(mapSize);
+		
 		createSheepPen(mapSize, SHEEP_PEN_W, SHEEP_PEN_H);
 		createWolfTransform(mapSize);
 		
@@ -65,6 +70,10 @@ public class Level {
 		
 		for (int i = 0; i < wolfCount; i++) {
 			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPredator(new Vector3(5f + 10f * i, 0f, 15f), new Vector3()));
+		}
+		
+		for (int i = 0; i < mapSize / (10f / complexity); i++) {
+			createTree(mapSize, 0.5f);
 		}
 		
 		wolfTB.ext(0f, 10f, 0f);
@@ -142,19 +151,58 @@ public class Level {
 		engine.removeAllEntities();
 	}
 	
+	private void createTree(float mapSize, float weight) {
+		BoundingBox treeBB = new BoundingBox();
+		
+		boolean okay = true;
+		
+		float penLocX = 0;
+		float penLocZ = 0;
+		
+		String treeType = (MathUtils.randomBoolean(weight) ? GraphicsHandler.MDL_TREE1 : GraphicsHandler.MDL_TREE2);
+		
+		ModelInstance treeInstance = ModelFactory.createCustomModel(treeType);
+		do {
+			okay = true;
+			
+			penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			
+			treeInstance.transform.setToTranslation(penLocX, 0f, penLocZ);
+			
+			treeBB = treeInstance.calculateBoundingBox(treeBB);
+			updateBoundingBox(treeInstance, treeBB);
+			
+			for (BoundingBox b : collisionBoxes.values())
+				if (b.intersects(treeBB)) {
+					okay = false;
+					break;
+				}
+			
+			if (okay) {
+				if (treeBB.intersects(sheepPen))
+					okay = false;
+				if (treeBB.intersects(wolfTB))
+					okay = false;
+			}
+		} while (!okay);
+		
+		addCollisionModel(newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(2f), 360f * MathUtils.random(), treeType));
+	}
+	
 	private void createWolfTransform(float mapSize) {
 		wolfTB = new BoundingBox();
+		wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
 		
 		do {
 			float penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
 			float penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
 			
-			wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
 			wolfTransform.transform.setToTranslation(penLocX, 0f, penLocZ);
 			
 			wolfTB = wolfTransform.calculateBoundingBox(wolfTB);
 			updateBoundingBox(wolfTransform, wolfTB);
-		} while (ModelFactory.intersectsWith(wolfTB, sheepPen));
+		} while (ModelFactory.intersectsWith(wolfTB, sheepPen) || !mapBox.contains(wolfTB));
 	}
 
 	private void createSheepPen(float mapSize, int penW, int penH) {
@@ -165,9 +213,15 @@ public class Level {
 				.calculateBoundingBox(new BoundingBox());
 
 		sheepPenModel = ModelFactory.createBoxModel(penW * fenceB.getWidth(), 0.5f, penH * fenceB.getWidth(), new Color(0.5f, 0.5f, 0.5f, 1f));
-		sheepPenModel.transform.setTranslation(penLocX, 0, penLocZ);
 		
-		sheepPen = sheepPenModel.calculateBoundingBox((sheepPen = new BoundingBox()));
+		do {
+			penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			
+			sheepPenModel.transform.setTranslation(penLocX, 0, penLocZ);
+			sheepPen = sheepPenModel.calculateBoundingBox((sheepPen = new BoundingBox()));
+			updateBoundingBox(sheepPenModel, sheepPen);
+		} while(!mapBox.contains(sheepPen));
 
 		int entryPoint = MathUtils.random(penW - 1);
 		boolean x = false;
@@ -240,7 +294,37 @@ public class Level {
 			addCollisionModel(newCollision(penLocX + ((penW / 2f) * fenceB.getWidth()), 0,
 					penLocZ + ((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 		}
+	}
+	
+	private void createBounds(float mapSize) {
+		mapBox = new BoundingBox();
 		
-		updateBoundingBox(sheepPenModel, sheepPen);
+		mapModel = ModelFactory.createBoxModel(mapSize, 0.5f, mapSize, new Color(0.2f, 0.2f, 0.8f, 1f));
+		mapModel.transform.setTranslation(0, 0, 0);
+		
+		mapBox = mapModel.calculateBoundingBox((mapBox = new BoundingBox()));
+		
+		BoundingBox fenceB = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1).model
+				.calculateBoundingBox(new BoundingBox());
+		
+		int penW = (int) (mapSize / fenceB.getWidth());
+		int penH = penW;
+		
+		for (int i = 0; i < penW; i++) {
+			// North Fence
+			addCollisionModel(newCollision(((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
+					0, -((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
+			// South Fence
+			addCollisionModel(newCollision(((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
+					0, ((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
+			// West Fence
+			addCollisionModel(newCollision(-((penW / 2f) * fenceB.getWidth()), 0, 
+					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+			// East Fence
+			addCollisionModel(newCollision(((penW / 2f) * fenceB.getWidth()), 0,
+					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+		}
+		
+		updateBoundingBox(mapModel, mapBox);
 	}
 }
