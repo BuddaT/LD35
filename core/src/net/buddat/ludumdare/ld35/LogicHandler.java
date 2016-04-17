@@ -82,8 +82,49 @@ public class LogicHandler {
 		PREY_ATTRACTOR_SPEEDS = speeds;
 	}
 
+	/**
+	 * Provides all attractors for prey
+	 */
+	private static final AttractedLister PREY_ATTRACTORS_LISTER = new AttractedLister(new AttractorProvider() {
+		@Override
+		public List<FlockAttractor> getAttractors(Entity entity) {
+			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
+			for (FlockAttractor attractor : new FlockAttractor[] {
+					CROWDING_MAPPER.get(entity),
+					COHESION_MAPPER.get(entity),
+					PREDATOR_PREY_MAPPER.get(entity)
+			}) {
+				if (attractor != null) {
+					attractors.add(attractor);
+				}
+			}
+			return attractors;
+		}
+	});
+
+	/**
+	 * Provides all attractors for predators
+	 */
+	private static final AttractedLister PREDATOR_ATTRACTORS_LISTER = new AttractedLister(new AttractorProvider() {
+		@Override
+		public List<FlockAttractor> getAttractors(Entity entity) {
+			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
+			PreyPredatorAttractor attractor = PREY_PREDATOR_MAPPER.get(entity);
+			if (attractor != null) {
+				attractors.add(attractor);
+			}
+			return attractors;
+		}
+	});
+
 	private ProjectionTranslator projectionTranslator;
 
+	/**
+	 * Creates a new creature basic position and movement attributes
+	 * @param position Creature position
+	 * @param rotation Creature rotation
+	 * @return Newly created creature
+	 */
 	public Entity createNewCreature(Vector3 position, Vector3 rotation) {
 		Entity creature = new Entity();
 		if (rotation.isZero()) {
@@ -94,6 +135,12 @@ public class LogicHandler {
 		return creature;
 	}
 
+	/**
+	 * Creates a new prey creature, assigned with all prey-related components
+	 * @param position Initial position
+	 * @param rotation Initial rotation
+	 * @return Prey entity
+	 */
 	public Entity createNewPrey(Vector3 position, Vector3 rotation) {
 		Entity creature = createNewCreature(position, rotation);
 		creature.add(new CrowdingRepulsor())
@@ -104,32 +151,18 @@ public class LogicHandler {
 		return creature;
 	}
 
+	/**
+	 * Creates a new predator creature, assigned with all predator-related components
+	 * @param position Initial position
+	 * @param rotation Initial rotation
+	 * @return Predator entity
+	 */
 	public Entity createNewPredator(Vector3 position, Vector3 rotation) {
 		Entity creature = createNewCreature(position, rotation);
 		creature.add(new PredatorPreyRepulsor())
 				.add(new Predator())
-				.add(PREDATOR_ATTRACTORS_LIST);
+				.add(PREDATOR_ATTRACTORS_LISTER);
 		return creature;
-	}
-
-	private static List<FlockAttractor> getPreyAttractors(Entity entity) {
-		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
-		for (FlockAttractor attractor : new FlockAttractor[] {
-				CROWDING_MAPPER.get(entity),
-				COHESION_MAPPER.get(entity),
-				PREDATOR_PREY_MAPPER.get(entity)
-		}) {
-			if (attractor != null) {
-				attractors.add(attractor);
-			}
-		}
-		return attractors;
-	}
-
-	private static List<FlockAttractor> getPredatorAttractors(Entity entity) {
-		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
-		attractors.add(PREY_PREDATOR_MAPPER.get(entity));
-		return attractors;
 	}
 
 	public void init() {
@@ -144,7 +177,9 @@ public class LogicHandler {
 		// Move the player towards the 3d position the mouse is pointing to?
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
 		POSN_MAPPER.get(player).position.set(worldMousePosn);
-		calculateMovementChanges();
+		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
+		calculateMovementChanges(engine, player, entities);
+		applyMovementChanges(entities);
 		if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
 			StringBuilder builder = new StringBuilder();
 			for (Entity entity : engine.getEntitiesFor(creatures)) {
@@ -159,11 +194,8 @@ public class LogicHandler {
 	 * O(n^2) due to the need to look at all other members of the flock.
 	 * Partitioning by location would improve this.
 	 */
-	private void calculateMovementChanges() {
-		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
-		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
-		
-		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
+	private void calculateMovementChanges(Engine engine, Entity player, ImmutableArray<Entity> entities) {
+
 		Position playerPosn = POSN_MAPPER.get(player);
 
 		// First calculate change in position for all objects.
@@ -176,7 +208,7 @@ public class LogicHandler {
 			// Attempt to move away from the player
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
 			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
-				float speed = PLAYER_EFFECT_RANGE/(dist2ToPlayer * dist2ToPlayer);
+				float speed = PLAYER_EFFECT_RANGE / (dist2ToPlayer * dist2ToPlayer);
 				change = movementCalculator.awayFrom(posn, playerPosn).nor().scl(speed).clamp(0, EVASION_SPEED);
 			} else {
 				change = new Vector3();
@@ -200,9 +232,7 @@ public class LogicHandler {
 				// Calculate total attraction for each attraction type
 				AttractedLister lister = ATTRACTED_LISTER_MAPPER.get(entity);
 				for (FlockAttractor attractor : lister.getAttractors(entity)) {
-					if (attractor == null)
-						continue;
-					
+
 					if (distance <= attractor.getMaxRange()) {
 						float speed = attractor.getBaseSpeed(distance);
 						Vector3 direction = movementCalculator.towards(posn, otherPosn).nor();
@@ -225,9 +255,12 @@ public class LogicHandler {
 			mvmnt.velocity.add(change).scl(0.5f);
 			mvmnt.rotation.set(change).nor();
 		}
+	}
 
+	public void applyMovementChanges(ImmutableArray<Entity> entities) {
 		// now apply the changes to each position
 		Vector3 up = UP.copy();
+
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
 			Movement movement = MVMNT_MAPPER.get(entity);
@@ -294,26 +327,6 @@ public class LogicHandler {
 			return provider.getAttractors(entity);
 		}
 	}
-
-	/**
-	 * Provides all attractors for prey
-	 */
-	private static final AttractedLister PREY_ATTRACTORS_LISTER = new AttractedLister(new AttractorProvider() {
-		@Override
-		public List<FlockAttractor> getAttractors(Entity entity) {
-			return getPreyAttractors(entity);
-		}
-	});
-
-	/**
-	 * Provides all attractors for predators
-	 */
-	private static final AttractedLister PREDATOR_ATTRACTORS_LIST = new AttractedLister(new AttractorProvider() {
-		@Override
-		public List<FlockAttractor> getAttractors(Entity entity) {
-			return getPredatorAttractors(entity);
-		}
-	});
 
 	public class Prey implements Component {};
 
