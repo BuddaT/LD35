@@ -8,7 +8,7 @@ public class PreyPredatorAttractor implements FlockAttractor {
 	private static final float MAX_RANGE = 50*50;
 	// Will trot within this distance
 	private static final float RANGE_TROT = 20*20;
-	// Will run within this distance
+	// Will sprint within this distance
 	private static final float RANGE_RUN = 10*10;
 
 	@Override
