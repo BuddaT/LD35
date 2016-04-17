@@ -312,7 +312,7 @@ public class LogicHandler {
 					continue;
 				}
 				
-				if (boxModel.collision.contains(end)) {
+				if (boxModel.lineIntersectsCollision(start, end)) {
 					collision = true;
 					break;
 				}
