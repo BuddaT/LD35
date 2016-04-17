@@ -45,13 +45,17 @@ public class LogicHandler {
 			ComponentMapper.getFor(PredatorPreyRepulsor.class);
 	private static final ComponentMapper<PreyPredatorAttractor> PREY_PREDATOR_MAPPER =
 			ComponentMapper.getFor(PreyPredatorAttractor.class);
-	private static final ComponentMapper<AttractedLister> ATTRACTED_LISTER_MAPPER =
-			ComponentMapper.getFor(AttractedLister.class);
+	// Lists what the entity is attracted to
+	private static final ComponentMapper<AttractedByLister> ATTRACTED_BY_MAPPER =
+			ComponentMapper.getFor(AttractedByLister.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
 	// Speed at which evasion is attempted
 	private static final float EVASION_SPEED = 5;
+
+	// Speed at which chasing is attempted
+	private static final float CHASE_SPEED = 5;
 
 	private static final float MAX_SPEED = 2;
 
@@ -74,6 +78,7 @@ public class LogicHandler {
 		speeds.put(AttractorType.COHESION, 0.05f);
 		speeds.put(AttractorType.PLAYER, EVASION_SPEED);
 		speeds.put(AttractorType.PREY_PREDATOR, EVASION_SPEED);
+		speeds.put(AttractorType.PREDATOR_PREY, CHASE_SPEED);
 		for (AttractorType type : AttractorType.values()) {
 			if (speeds.get(type) == null) {
 				speeds.put(type, 0.05f);
@@ -83,11 +88,11 @@ public class LogicHandler {
 	}
 
 	/**
-	 * Provides all attractors for prey
+	 * Provides all attractors in which a prey is interested
 	 */
-	private static final AttractedLister PREY_ATTRACTORS_LISTER = new AttractedLister(new AttractorProvider() {
+	private static final AttractedByLister PREY_ATTRACTORS_LISTER = new AttractedByLister(new AttractorProvider() {
 		@Override
-		public List<FlockAttractor> getAttractors(Entity entity) {
+		public List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
 			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
 			for (FlockAttractor attractor : new FlockAttractor[] {
 					CROWDING_MAPPER.get(entity),
@@ -103,11 +108,11 @@ public class LogicHandler {
 	});
 
 	/**
-	 * Provides all attractors for predators
+	 * Provides all attractors in which a predator is interested
 	 */
-	private static final AttractedLister PREDATOR_ATTRACTORS_LISTER = new AttractedLister(new AttractorProvider() {
+	private static final AttractedByLister PREDATOR_ATTRACTORS_LISTER = new AttractedByLister(new AttractorProvider() {
 		@Override
-		public List<FlockAttractor> getAttractors(Entity entity) {
+		public List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
 			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
 			PreyPredatorAttractor attractor = PREY_PREDATOR_MAPPER.get(entity);
 			if (attractor != null) {
@@ -204,6 +209,8 @@ public class LogicHandler {
 			Position posn = POSN_MAPPER.get(entity);
 			Movement mvmnt = MVMNT_MAPPER.get(entity);
 			Vector3 change;
+			boolean isPrey = entity.getComponent(Prey.class) != null;
+			boolean isPredator = entity.getComponent(Predator.class) != null;
 
 			// Attempt to move away from the player
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
@@ -216,12 +223,14 @@ public class LogicHandler {
 
 			// Try to avoid crowding neighbors, yet keep in distance
 			ImmutableArray<Entity> others = engine.getEntitiesFor(creatures);
-			// Get all the possible attractor types
+			// Find out what this entity is attracted to
 			EnumMap<AttractorType, Vector3> attractors =
 					new EnumMap<AttractorType, Vector3>(AttractorType.class);
 			for (AttractorType attractorType : AttractorType.values()) {
 				attractors.put(attractorType, new Vector3());
 			}
+			// Get a lister of attractors in which this entity is interested
+			AttractedByLister lister = ATTRACTED_BY_MAPPER.get(entity);
 			for (int j = 0; j < others.size(); j++) {
 				Entity other = others.get(j);
 				if (entity == other) {
@@ -229,9 +238,8 @@ public class LogicHandler {
 				}
 				Position otherPosn = POSN_MAPPER.get(other);
 				float distance = posn.position.dst2(otherPosn.position);
-				// Calculate total attraction for each attraction type
-				AttractedLister lister = ATTRACTED_LISTER_MAPPER.get(entity);
-				for (FlockAttractor attractor : lister.getAttractors(entity)) {
+				// List all interesting attractors on the other entity
+				for (FlockAttractor attractor : lister.getAttractorsFoundIn(other)) {
 
 					if (distance <= attractor.getMaxRange()) {
 						float speed = attractor.getBaseSpeed(distance);
@@ -313,18 +321,28 @@ public class LogicHandler {
 	}
 
 	private interface AttractorProvider {
-		List<FlockAttractor> getAttractors(Entity entity);
+		List<FlockAttractor> getAttractorsFoundIn(Entity entity);
 	}
 
-	private static class AttractedLister implements Component {
+	/**
+	 * When attached to an entity, lists all attractors on another entity in
+	 * which this one is interested.
+	 */
+	private static class AttractedByLister implements Component {
 		private final AttractorProvider provider;
 
-		public AttractedLister(AttractorProvider provider) {
+		public AttractedByLister(AttractorProvider provider) {
 			this.provider = provider;
 		}
 
-		List<FlockAttractor> getAttractors(Entity entity) {
-			return provider.getAttractors(entity);
+		/**
+		 * Lists all attractors on the specified entity in which this entity
+		 * is interested
+		 * @param entity Entity on which interesting attractors are listed
+		 * @return List of attractors
+		 */
+		List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
+			return provider.getAttractorsFoundIn(entity);
 		}
 	}
 
