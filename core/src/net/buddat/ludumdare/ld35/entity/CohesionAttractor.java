@@ -3,12 +3,12 @@ package net.buddat.ludumdare.ld35.entity;
 /**
  * Cohesion
  */
-public class CohesionAttractor extends FlockAttractor {
+public class CohesionAttractor implements FlockAttractor {
 	// Distance to calculate cohesion (^ 2 to avoid sqrt)
 	private static final float COHESION_RANGE = 30*30;
 
 	@Override
-	public float getAcceleration(float distance) {
+	public float getBaseSpeed(float distance) {
 		return 1;
 	}
 
@@ -18,7 +18,7 @@ public class CohesionAttractor extends FlockAttractor {
 	}
 
 	@Override
-	public AttractorType getAttractantType() {
+	public AttractorType getAttractorType() {
 		return AttractorType.COHESION;
 	}
 }

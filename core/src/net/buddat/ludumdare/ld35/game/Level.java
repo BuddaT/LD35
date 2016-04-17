@@ -51,7 +51,7 @@ public class Level {
 	private void generateLevel(float mapSize) {
 		player = new Entity();
 		player.add(new Position(new Vector3(), new Vector3()));
-		player.add(new Movement(0, 0, 0, 0, 0, 0));
+		player.add(new Movement(new Vector3(), new Vector3()));
 		player.add(new LogicHandler.Mouseable());
 
 		engine.addEntity(player);

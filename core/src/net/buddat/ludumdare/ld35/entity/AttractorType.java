@@ -6,7 +6,7 @@ package net.buddat.ludumdare.ld35.entity;
 public enum AttractorType {
 	CROWDING,
 	COHESION,
-	PREDATOR,
+	PREY_PREDATOR,
 	PLAYER,
 	GENERAL
 }

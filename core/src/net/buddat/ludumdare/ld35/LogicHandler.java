@@ -15,13 +15,9 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 
-import net.buddat.ludumdare.ld35.entity.AttractorType;
-import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
-import net.buddat.ludumdare.ld35.entity.CrowdingAttractor;
-import net.buddat.ludumdare.ld35.entity.FlockAttractor;
-import net.buddat.ludumdare.ld35.entity.Movement;
-import net.buddat.ludumdare.ld35.entity.Position;
-import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
+import net.buddat.ludumdare.ld35.entity.*;
+import net.buddat.ludumdare.ld35.math.ImmutableVector3;
+import net.buddat.ludumdare.ld35.math.MovementCalculator;
 
 public class LogicHandler {
 	private static final int NUM_CREATURES = 5;
@@ -43,11 +39,15 @@ public class LogicHandler {
 	// Speed at which evasion is attempted
 	private static final float EVASION_SPEED = 5;
 
-	// Distance to calculate cohesion (^ 2 to avoid sqrt)
-	private static final float COHESION_RANGE = 30*30;
-	private static final float COHESION_SPEED = 0.05f;
-
 	private static final float MAX_SPEED = 2;
+
+	private static final ImmutableVector3 DEFAULT_ROTATION =
+			new ImmutableVector3(0, 0, 1);
+	private final MovementCalculator movementCalculator = new MovementCalculator(DEFAULT_ROTATION);
+
+	/**
+	 * Max speed at which prey is attracted to/repulsed by things
+	 */
 	private static final EnumMap<AttractorType, Float> PREY_ATTRACTOR_SPEEDS;
 	static {
 		EnumMap<AttractorType, Float> speeds =
@@ -55,7 +55,7 @@ public class LogicHandler {
 		speeds.put(AttractorType.CROWDING, 0.5f);
 		speeds.put(AttractorType.COHESION, 0.05f);
 		speeds.put(AttractorType.PLAYER, EVASION_SPEED);
-		speeds.put(AttractorType.PREDATOR, EVASION_SPEED);
+		speeds.put(AttractorType.PREY_PREDATOR, EVASION_SPEED);
 		for (AttractorType type : AttractorType.values()) {
 			if (speeds.get(type) == null) {
 				speeds.put(type, 0.05f);
@@ -70,8 +70,11 @@ public class LogicHandler {
 
 	public Entity createNewPrey(Vector3 position, Vector3 rotation) {
 		Entity creature = new Entity();
+		if (rotation.isZero()) {
+			creature.add(new Position(position, new Vector3(0, 0, 1)));
+		}
 		creature.add(new Position(position, rotation));
-		creature.add(new Movement(0, 0, 0, 0, 0, 0));
+		creature.add(new Movement(new Vector3(), new Vector3(0, 0, 0)));
 		CrowdingAttractor creatureFlockAttractor = new CrowdingAttractor();
 		creature.add(creatureFlockAttractor);
 		CohesionAttractor cohesionAttractor = new CohesionAttractor();
@@ -124,13 +127,12 @@ public class LogicHandler {
 		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
 		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
 		
-		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
+		ImmutableArray<Entity> entities = engine.getEntitiesFor(sheep);
 		Position playerPosn = POSN_MAPPER.get(player);
 
 		// First calculate change in position for all objects.
 		for (int i = 0; i < entities.size(); i++) {
 			Entity entity = entities.get(i);
-			ArrayList<Entity> neighbours = new ArrayList<Entity>();
 			Position posn = POSN_MAPPER.get(entity);
 			Movement mvmnt = MVMNT_MAPPER.get(entity);
 			Vector3 change;
@@ -138,14 +140,14 @@ public class LogicHandler {
 			// Attempt to move away from the player
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
 			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
-				float acceleration = PLAYER_EFFECT_RANGE/(dist2ToPlayer * dist2ToPlayer);
-				change = awayFrom(posn, playerPosn).nor().scl(acceleration).clamp(0, EVASION_SPEED);
+				float speed = PLAYER_EFFECT_RANGE/(dist2ToPlayer * dist2ToPlayer);
+				change = movementCalculator.awayFrom(posn, playerPosn).nor().scl(speed).clamp(0, EVASION_SPEED);
 			} else {
 				change = new Vector3();
 			}
 
 			// Try to avoid crowding neighbors, yet keep in distance
-			ImmutableArray<Entity> others = engine.getEntitiesFor(sheep);
+			ImmutableArray<Entity> others = engine.getEntitiesFor(creatures);
 			// Get all the possible attractor types
 			EnumMap<AttractorType, Vector3> attractors =
 					new EnumMap<AttractorType, Vector3>(AttractorType.class);
@@ -163,9 +165,9 @@ public class LogicHandler {
 				// neighbors increases the closer you are
 				for (FlockAttractor attractor : getPreyAttractors(entity)) {
 					if (distance <= attractor.getMaxRange()) {
-						float acceleration = attractor.getAcceleration(distance);
-						Vector3 direction = towards(posn, otherPosn).nor();
-						attractors.get(attractor.getAttractantType()).add(direction.scl(acceleration));
+						float speed = attractor.getBaseSpeed(distance);
+						Vector3 direction = movementCalculator.towards(posn, otherPosn).nor();
+						attractors.get(attractor.getAttractorType()).add(direction.scl(speed));
 					}
 				}
 			}
@@ -182,31 +184,23 @@ public class LogicHandler {
 			change.y = 0;
 			// velocity changes to the average between the desired and current
 			mvmnt.velocity.add(change).scl(0.5f);
+			mvmnt.rotation.set(change).nor();
 		}
 
 		// now apply the changes to each position
 		Vector3 up = new Vector3(0, 1, 0);
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
-			Vector3 change = MVMNT_MAPPER.get(entity).velocity;
-			posn.position.add(change);
+			Movement movement = MVMNT_MAPPER.get(entity);
+			posn.position.add(movement.velocity);
 			ModelInstance model = MODEL_MAPPER.get(entity).model;
-			if (!change.isZero()) {
-				Vector3 lookDirection = new Vector3(change).nor();
-				model.transform.setToLookAt(lookDirection, up);
+			Vector3 lookDirection = movementCalculator.calculateNewDirection(posn.rotation, movement.rotation);
+			if (lookDirection.isZero()) {
+				System.out.println("zero lookdirection");
 			}
-			model.transform.setTranslation(posn.position);
+			posn.rotation = lookDirection;
+			model.transform.setToLookAt(lookDirection, up).setTranslation(posn.position);
 		}
-	}
-
-	// Calculates a new vector from the origin away from the target
-	private Vector3 awayFrom(Position origin, Position target) {
-		return new Vector3(origin.position).sub(target.position);
-	}
-
-	// Calculates a new vector from the origin to the target
-	private Vector3 towards(Position origin, Position target) {
-		return new Vector3(target.position).sub(origin.position);
 	}
 
 	public void createCreatures(ModelInstanceProvider modelProvider) {

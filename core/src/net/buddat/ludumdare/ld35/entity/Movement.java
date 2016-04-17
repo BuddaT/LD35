@@ -10,8 +10,8 @@ public class Movement implements Component {
 	public Vector3 velocity;
 	public Vector3 rotation;
 
-	public Movement(float x, float y, float z, float rotX, float rotY, float rotZ) {
-		this.velocity = new Vector3(x, y, z);
-		this.rotation = new Vector3(rotX, rotY, rotZ);
+	public Movement(Vector3 velocity, Vector3 rotation) {
+		this.velocity = new Vector3(velocity);
+		this.rotation = new Vector3(rotation);
 	}
 }
