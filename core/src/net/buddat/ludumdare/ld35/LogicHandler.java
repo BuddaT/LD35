@@ -1,6 +1,7 @@
 package net.buddat.ludumdare.ld35;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
@@ -9,13 +10,12 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 
-import net.buddat.ludumdare.ld35.entity.FlockAttractor;
-import net.buddat.ludumdare.ld35.entity.Movement;
-import net.buddat.ludumdare.ld35.entity.Position;
-import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
+import net.buddat.ludumdare.ld35.entity.*;
+import org.w3c.dom.Attr;
 
 public class LogicHandler {
 	private Engine engine;
@@ -39,13 +39,27 @@ public class LogicHandler {
 	// Distance to calculate crowding (^ 2 to avoid sqrt)
 	private static final float CROWDING_RANGE = 10*10;
 	private static final float CROWDING_SPEED = 0.5f;
+
 	// Distance to calculate cohesion (^ 2 to avoid sqrt)
 	private static final float COHESION_RANGE = 30*30;
 	private static final float COHESION_SPEED = 0.05f;
 
 	private static final float MAX_SPEED = 2;
-
-	private static final float DIRECTIONAL_DAMPING = 0.5f;
+	private static final EnumMap<AttractantType, Float> FLOCK_ATTRACTANT_SPEEDS;
+	static {
+		EnumMap<AttractantType, Float> speeds =
+				new EnumMap<AttractantType, Float>(AttractantType.class);
+		speeds.put(AttractantType.CROWDING, 0.5f);
+		speeds.put(AttractantType.COHESION, 0.05f);
+		speeds.put(AttractantType.PLAYER, EVASION_SPEED);
+		speeds.put(AttractantType.PREDATOR, EVASION_SPEED);
+		for (AttractantType type : AttractantType.values()) {
+			if (speeds.get(type) == null) {
+				speeds.put(type, 0.05f);
+			}
+		}
+		FLOCK_ATTRACTANT_SPEEDS = speeds;
+	}
 
 	private ProjectionTranslator projectionTranslator;
 
@@ -53,15 +67,20 @@ public class LogicHandler {
 		Entity creature = new Entity();
 		creature.add(new Position(position, rotation));
 		creature.add(new Movement(0, 0, 0, 0, 0, 0));
-		FlockAttractor.AttractionProvider attractionProvider = new FlockAttractor.AttractionProvider() {
+		AttractionProvider attractionProvider = new AttractionProvider() {
 			@Override
 			public float getAcceleration(float distance) {
-				return CROWDING_RANGE/(distance*distance);
+				return -CROWDING_RANGE/(distance*distance);
 			}
 
 			@Override
 			public float getMaxRange() {
 				return CROWDING_RANGE;
+			}
+
+			@Override
+			public AttractantType getType() {
+				return AttractantType.CROWDING;
 			}
 		};
 		FlockAttractor creatureFlockAttractor = new FlockAttractor(attractionProvider);
@@ -91,6 +110,13 @@ public class LogicHandler {
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
 		POSN_MAPPER.get(player).position.set(worldMousePosn);
 		calculateMovementChanges();
+		if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+			StringBuilder builder = new StringBuilder();
+			for (Entity entity : engine.getEntitiesFor(creatures)) {
+				builder.append(POSN_MAPPER.get(entity).position).append(", ");
+			}
+			System.out.println(builder.toString());
+		}
 	}
 
 	/**
@@ -119,11 +145,16 @@ public class LogicHandler {
 			} else {
 				change = new Vector3();
 			}
-
-			// Try to avoid crowding neighbors, yet keep in distance
 			Vector3 crowdingChange = new Vector3();
 			Vector3 cohesionChange = new Vector3();
+
+			// Try to avoid crowding neighbors, yet keep in distance
 			ImmutableArray<Entity> others = engine.getEntitiesFor(flockAttractors);
+			EnumMap<AttractantType, Vector3> attractants =
+					new EnumMap<AttractantType, Vector3>(AttractantType.class);
+			for (AttractantType attractantType : AttractantType.values()) {
+				attractants.put(attractantType, new Vector3());
+			}
 			for (int j = 0; j < others.size(); j++) {
 				if (i == j) {
 					continue;
@@ -136,16 +167,25 @@ public class LogicHandler {
 				FlockAttractor attractor = ATTRACTOR_MAPPER.get(entity);
 				if (distance <= attractor.getMaxRange()) {
 					float acceleration = ATTRACTOR_MAPPER.get(entity).getAcceleration(distance);
-					Vector3 crowdDirection = awayFrom(posn, otherPosn).nor();
-					crowdingChange.add(crowdDirection.scl(acceleration));
+					Vector3 direction = towards(posn, otherPosn).nor();
+					attractants.get(attractor.getAttractantType()).add(direction.scl(acceleration));
 				}
 				if (distance <= COHESION_RANGE) {
 					cohesionChange.add(towards(posn, otherPosn).nor());
 				}
 			}
-			crowdingChange.clamp(0, CROWDING_SPEED);
 			cohesionChange.clamp(0, COHESION_SPEED);
-			change.add(crowdingChange).add(cohesionChange).clamp(0, MAX_SPEED);
+
+			for (AttractantType attractantType : AttractantType.values()) {
+				if (!(attractantType.equals(AttractantType.CROWDING))) {
+					continue;
+				}
+				Vector3 attractantChange = attractants.get(attractantType);
+				change.add(attractantChange.clamp(0, FLOCK_ATTRACTANT_SPEEDS.get(attractantType)));
+			}
+
+			change.add(cohesionChange);
+			change.clamp(0, MAX_SPEED);
 			// zero any y values for now
 			change.y = 0;
 			// velocity changes to the average between the desired and current

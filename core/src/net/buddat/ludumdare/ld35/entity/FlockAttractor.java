@@ -3,7 +3,7 @@ package net.buddat.ludumdare.ld35.entity;
 import com.badlogic.ashley.core.Component;
 
 /**
- * Attracts flock entities
+ * Attracts flock entities. Negative attraction acts as repellant.
  */
 public class FlockAttractor implements Component {
 	private final AttractionProvider provider;
@@ -18,9 +18,7 @@ public class FlockAttractor implements Component {
 		return provider.getMaxRange();
 	}
 
-	public abstract static class AttractionProvider {
-		public abstract float getAcceleration(float distance);
-
-		public abstract float getMaxRange();
+	public AttractantType getAttractantType() {
+		return provider.getType();
 	}
 }
