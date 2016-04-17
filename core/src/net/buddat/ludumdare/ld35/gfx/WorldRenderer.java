@@ -26,7 +26,7 @@ import net.buddat.ludumdare.ld35.game.Level;
 public class WorldRenderer implements ProjectionTranslator {
 
 	private static final float SUN_MOVEMENT_SPEED = 0.001f;
-	private static final float CAMERA_HEIGHT = 100f;
+	private static final float CAMERA_HEIGHT = 80f;
 
 	private Environment worldEnvironment;
 
@@ -75,10 +75,6 @@ public class WorldRenderer implements ProjectionTranslator {
 		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
 		worldModelInstance = ModelFactory.createBoxModel(100f, 0.25f, 100f, Color.FOREST);
-		testModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1);
-		testModelInstance2 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TREE1);
-		testModelInstance3 = ModelFactory.createCustomModel(GraphicsHandler.MDL_TREE2);
-		wolfInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_WOLF);
 		
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
 
@@ -86,31 +82,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		playerAnimation.setAnimation(playerModelInstance.animations.first().id, -1);
 		animations.put(playerModelInstance, playerAnimation);
 
-		AnimationController wolfAnim = new AnimationController(wolfInstance);
-		wolfAnim.setAnimation(wolfInstance.animations.first().id, -1);
-		animations.put(wolfInstance, wolfAnim);
-
-		wolfInstance.transform.setToTranslation(5f, 0f, 5f);
-		testModelInstance2.transform.setToTranslation(-10f, 0f, -10f);
-		testModelInstance3.transform.setToTranslation(-10f, 0f, 10f);
-
-		for (int i = 0; i < 100; i++)
-			for (int j = 0; j < 100; j++) {
-				if (MathUtils.randomBoolean(0.5f))
-					continue;
-
-				ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_GRASS);
-				model.transform.setToTranslation(-250f + (i * 5f), 0f, -250f + (j * 5f));
-				model.transform.rotate(Vector3.Y, MathUtils.random() * 360f);
-
-				noshadowInstance.add(model);
-			}
-
 		instances.add(worldModelInstance);
-		/*instances.add(testModelInstance);
-		instances.add(testModelInstance2);
-		instances.add(testModelInstance3);
-		instances.add(wolfInstance);*/
 		instances.add(playerModelInstance);
 
 		currentLevel = new Level(10, 10, 1.0f);

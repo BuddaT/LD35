@@ -45,7 +45,7 @@ public class Level {
 
 		this.engine = new Engine();
 
-		generateLevel(75f);
+		generateLevel(150f);
 	}
 
 	private void generateLevel(float mapSize) {
@@ -57,8 +57,6 @@ public class Level {
 		engine.addEntity(player);
 
 		createSheepPen(mapSize, SHEEP_PEN_W, SHEEP_PEN_H);
-		updateBoundingBox(sheepPenModel, sheepPen);
-		
 		createWolfTransform(mapSize);
 		
 		for (int i = 0; i < sheepCount; i++) {
@@ -74,6 +72,8 @@ public class Level {
 		c.transform.setToTranslation(x, y, z).rotate(Vector3.Y, rotation).scale(scale, scale, scale);
 
 		addCollisionBox(c, c.calculateBoundingBox(new BoundingBox()));
+		
+		updateBoundingBox(c);
 
 		return c;
 	}
@@ -160,14 +160,10 @@ public class Level {
 		BoundingBox fenceB = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1).model
 				.calculateBoundingBox(new BoundingBox());
 
-		sheepPen = new BoundingBox(new Vector3(penLocX, 0, penLocZ), new Vector3(
-				penLocX + (penW * fenceB.getWidth()), 10, penLocZ + (penH * fenceB.getWidth())));
-
-		sheepPenModel = ModelFactory.createBoxModel(sheepPen.getWidth(), 0.5f, sheepPen.getDepth(),
-				new Color(0.5f, 0.5f, 0.5f, 1f));
-		sheepPenModel.transform.setTranslation(penLocX + fenceB.getWidth(), 0, penLocZ + fenceB.getWidth());
+		sheepPenModel = ModelFactory.createBoxModel(penW * fenceB.getWidth(), 0.5f, penH * fenceB.getWidth(), new Color(0.5f, 0.5f, 0.5f, 1f));
+		sheepPenModel.transform.setTranslation(penLocX, 0, penLocZ);
 		
-		sheepPen = sheepPenModel.calculateBoundingBox(sheepPen);
+		sheepPen = sheepPenModel.calculateBoundingBox((sheepPen = new BoundingBox()));
 
 		int entryPoint = MathUtils.random(penW - 1);
 		boolean x = false;
@@ -200,47 +196,47 @@ public class Level {
 			}
 		}
 
+		System.out.println(x + "," + firstDir + "," + entryPoint);
 		for (int i = 0; i < penW; i++) {
 			if (x && i == entryPoint) {
 				if (firstDir)
-					addCollisionModel(newCollision(penLocX + (i * fenceB.getWidth()), 0,
-							penLocZ - (fenceB.getWidth() / 2f), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
+					addCollisionModel(newCollision(penLocX + ((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
+							0, penLocZ - ((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
 				else
-					addCollisionModel(newCollision(penLocX + (i * fenceB.getWidth()), 0,
-							penLocZ + (penH * fenceB.getWidth()) - (fenceB.getWidth() / 2f), 1.0f, 0f,
-							GraphicsHandler.MDL_FENCE1));
+					addCollisionModel(newCollision(penLocX + ((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
+							0, penLocZ + ((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
 
 				continue;
 			}
 
 			// North Fence
-			addCollisionModel(newCollision(penLocX + (i * fenceB.getWidth()), 0, penLocZ - (fenceB.getWidth() / 2f),
-					1.0f, 0f, GraphicsHandler.MDL_FENCE1));
+			addCollisionModel(newCollision(penLocX + ((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
+					0, penLocZ - ((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
 			// South Fence
-			addCollisionModel(newCollision(penLocX + (i * fenceB.getWidth()), 0,
-					penLocZ + (penH * fenceB.getWidth()) - (fenceB.getWidth() / 2f), 1.0f, 0f,
-					GraphicsHandler.MDL_FENCE1));
+			addCollisionModel(newCollision(penLocX + ((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
+					0, penLocZ + ((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
 		}
 
 		for (int i = 0; i < penH; i++) {
 			if (!x && i == entryPoint) {
 				if (firstDir)
-					addCollisionModel(
-							newCollision(penLocX + (penW * fenceB.getWidth()) - (fenceB.getWidth() / 2f), 0,
-									penLocZ + (i * fenceB.getWidth()), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+					addCollisionModel(newCollision(penLocX + ((penW / 2f) * fenceB.getWidth()), 0,
+							penLocZ + ((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 				else
-					addCollisionModel(newCollision(penLocX - (fenceB.getWidth() / 2f), 0,
-							penLocZ + (i * fenceB.getWidth()), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+					addCollisionModel(newCollision(penLocX - ((penW / 2f) * fenceB.getWidth()), 0, 
+							penLocZ + ((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 
 				continue;
 			}
 
 			// West Fence
-			addCollisionModel(newCollision(penLocX - (fenceB.getWidth() / 2f), 0, penLocZ + (i * fenceB.getWidth()),
-					1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+			addCollisionModel(newCollision(penLocX - ((penW / 2f) * fenceB.getWidth()), 0, 
+					penLocZ + ((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 			// East Fence
-			addCollisionModel(newCollision(penLocX + (penW * fenceB.getWidth()) - (fenceB.getWidth() / 2f), 0,
-					penLocZ + (i * fenceB.getWidth()), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+			addCollisionModel(newCollision(penLocX + ((penW / 2f) * fenceB.getWidth()), 0,
+					penLocZ + ((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 		}
+		
+		updateBoundingBox(sheepPenModel, sheepPen);
 	}
 }
