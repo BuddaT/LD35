@@ -29,8 +29,8 @@ public class LogicHandler {
 			ComponentMapper.getFor(Movement.class);
 	private static final ComponentMapper<ModelComponent> MODEL_MAPPER =
 			ComponentMapper.getFor(ModelComponent.class);
-	private static final ComponentMapper<CrowdingAttractor> CROWDING_MAPPER =
-			ComponentMapper.getFor(CrowdingAttractor.class);
+	private static final ComponentMapper<CrowdingRepulsor> CROWDING_MAPPER =
+			ComponentMapper.getFor(CrowdingRepulsor.class);
 	private static final ComponentMapper<CohesionAttractor> COHESION_MAPPER =
 			ComponentMapper.getFor(CohesionAttractor.class);
 
@@ -41,8 +41,12 @@ public class LogicHandler {
 
 	private static final float MAX_SPEED = 2;
 
+	// Default height above the "ground" at which to draw entities
+	private static final float DEFAULT_HEIGHT = 0;
 	private static final ImmutableVector3 DEFAULT_ROTATION =
 			new ImmutableVector3(0, 0, 1);
+	private static final ImmutableVector3 UP = new ImmutableVector3(0, 1, 0);
+
 	private final MovementCalculator movementCalculator = new MovementCalculator(DEFAULT_ROTATION);
 
 	/**
@@ -66,32 +70,39 @@ public class LogicHandler {
 
 	private ProjectionTranslator projectionTranslator;
 
-	private class Prey implements Component {};
-
-	public Entity createNewPrey(Vector3 position, Vector3 rotation) {
+	public Entity createNewCreature(Vector3 position, Vector3 rotation) {
 		Entity creature = new Entity();
 		if (rotation.isZero()) {
-			creature.add(new Position(position, new Vector3(0, 0, 1)));
+			creature.add(new Position(position, DEFAULT_ROTATION.copy()));
 		}
 		creature.add(new Position(position, rotation));
 		creature.add(new Movement(new Vector3(), new Vector3(0, 0, 0)));
-		CrowdingAttractor creatureFlockAttractor = new CrowdingAttractor();
-		creature.add(creatureFlockAttractor);
-		CohesionAttractor cohesionAttractor = new CohesionAttractor();
-		creature.add(cohesionAttractor);
-		creature.add(new Prey());
+		return creature;
+	}
+
+	public Entity createNewPrey(Vector3 position, Vector3 rotation) {
+		Entity creature = createNewCreature(position, rotation);
+		creature.add(new CrowdingRepulsor())
+				.add(new CohesionAttractor())
+				.add(new Prey());
+		return creature;
+	}
+
+	public Entity createNewPredator(Vector3 position, Vector3 rotation) {
+		Entity creature = createNewCreature(position, rotation);
+		creature.add(new PredatorPreyRepulsor())
+				.add(new Predator());
 		return creature;
 	}
 
 	private List<FlockAttractor> getPreyAttractors(Entity entity) {
 		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
-		FlockAttractor attractor = CROWDING_MAPPER.get(entity);
-		if (attractor != null) {
-			attractors.add(CROWDING_MAPPER.get(entity));
-		}
-		attractor = COHESION_MAPPER.get(entity);
-		if (attractor != null) {
-			attractors.add(attractor);
+		for (FlockAttractor attractor : new FlockAttractor[] {
+				CROWDING_MAPPER.get(entity),
+				COHESION_MAPPER.get(entity)}) {
+			if (attractor != null) {
+				attractors.add(attractor);
+			}
 		}
 		return attractors;
 	}
@@ -161,8 +172,7 @@ public class LogicHandler {
 				Entity other = others.get(j);
 				Position otherPosn = POSN_MAPPER.get(other);
 				float distance = posn.position.dst2(otherPosn.position);
-				// Crowding mechanic means that entities acceleration away from
-				// neighbors increases the closer you are
+				// Calculate total attraction for each attraction type
 				for (FlockAttractor attractor : getPreyAttractors(entity)) {
 					if (distance <= attractor.getMaxRange()) {
 						float speed = attractor.getBaseSpeed(distance);
@@ -172,27 +182,29 @@ public class LogicHandler {
 				}
 			}
 
+			// Add all attractions together, clamped by their speed
 			for (AttractorType attractorType : AttractorType.values()) {
 				Vector3 attractantChange = attractors.get(attractorType);
 				float speed = PREY_ATTRACTOR_SPEEDS.get(attractorType);
 				change.add(attractantChange.clamp(0, speed));
 			}
 
-			//change.add(cohesionChange);
 			change.clamp(0, MAX_SPEED);
-			// zero any y values for now
-			change.y = 0;
-			// velocity changes to the average between the desired and current
+			// any y values for now are set to default height
+			change.y = DEFAULT_HEIGHT;
+			// velocity changes to the average between the desired and current. This doesn't work as intended yet
 			mvmnt.velocity.add(change).scl(0.5f);
 			mvmnt.rotation.set(change).nor();
 		}
 
 		// now apply the changes to each position
-		Vector3 up = new Vector3(0, 1, 0);
+		Vector3 up = UP.copy();
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
 			Movement movement = MVMNT_MAPPER.get(entity);
 			posn.position.add(movement.velocity);
+			// maybe we shouldn't be transforming it from within the logic
+			// but whatever. hack hack hack, hackity hack
 			ModelInstance model = MODEL_MAPPER.get(entity).model;
 			Vector3 lookDirection = movementCalculator.calculateNewDirection(posn.rotation, movement.rotation);
 			if (lookDirection.isZero()) {
@@ -237,4 +249,14 @@ public class LogicHandler {
 	public interface ModelInstanceProvider {
 		ModelInstance createModel(Vector3 position);
 	}
+
+	/**
+	 * Marker class for prey
+	 */
+	private class Prey implements Component {};
+
+	/**
+	 * Marker class for predators
+	 */
+	private class Predator implements Component {};
 }

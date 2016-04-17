@@ -1,11 +1,9 @@
 package net.buddat.ludumdare.ld35.entity;
 
-import com.badlogic.ashley.core.Component;
-
 /**
- * Repulsion of prey from predators
+ * Repulsion of prey from predators.
  */
-public class PredatorPreyAttractor implements FlockAttractor {
+public class PredatorPreyRepulsor implements FlockAttractor {
 	// Distance from predator to prey (^ 2 to avoid sqrt)
 	private static final float RANGE = 30*30;
 
