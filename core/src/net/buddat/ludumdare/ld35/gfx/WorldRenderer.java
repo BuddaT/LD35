@@ -2,6 +2,7 @@ package net.buddat.ludumdare.ld35.gfx;
 
 import java.util.HashMap;
 
+import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -20,6 +21,7 @@ import com.badlogic.gdx.utils.Array;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
+import net.buddat.ludumdare.ld35.LogicHandler.Predator;
 import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 import net.buddat.ludumdare.ld35.game.Level;
 
@@ -94,12 +96,12 @@ public class WorldRenderer implements ProjectionTranslator {
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
 					@Override
-					public ModelInstance createModel(Vector3 position) {
+					public ModelInstance createModel(Entity e, Vector3 position) {
 						ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_SHEEP);
 						model.transform.setToTranslation(position);
 						instances.add(model);
 						
-						if (MathUtils.randomBoolean(0.5f))
+						if (e.getComponent(Predator.class) != null)
 							model.materials.get(1).set(ColorAttribute.createDiffuse(Color.RED));
 
 						AnimationController anim = new AnimationController(model);

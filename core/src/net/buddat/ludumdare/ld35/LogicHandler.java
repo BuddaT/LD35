@@ -15,7 +15,15 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 
-import net.buddat.ludumdare.ld35.entity.*;
+import net.buddat.ludumdare.ld35.entity.AttractorType;
+import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
+import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
+import net.buddat.ludumdare.ld35.entity.FlockAttractor;
+import net.buddat.ludumdare.ld35.entity.Movement;
+import net.buddat.ludumdare.ld35.entity.Position;
+import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
+import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
+import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
 import net.buddat.ludumdare.ld35.math.MovementCalculator;
 
@@ -192,6 +200,9 @@ public class LogicHandler {
 				// Calculate total attraction for each attraction type
 				AttractedLister lister = ATTRACTED_LISTER_MAPPER.get(entity);
 				for (FlockAttractor attractor : lister.getAttractors(entity)) {
+					if (attractor == null)
+						continue;
+					
 					if (distance <= attractor.getMaxRange()) {
 						float speed = attractor.getBaseSpeed(distance);
 						Vector3 direction = movementCalculator.towards(posn, otherPosn).nor();
@@ -237,7 +248,7 @@ public class LogicHandler {
 		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
 		
 		for (Entity entity : engine.getEntitiesFor(creatures)) {
-			ModelInstance model = modelProvider.createModel(POSN_MAPPER.get(entity).position);
+			ModelInstance model = modelProvider.createModel(entity, POSN_MAPPER.get(entity).position);
 			entity.add(new ModelComponent(model));
 		}
 	}
@@ -253,8 +264,8 @@ public class LogicHandler {
 	}
 
 	// Simple reference to the model
-	private static class ModelComponent implements Component {
-		private final ModelInstance model;
+	public static class ModelComponent implements Component {
+		public final ModelInstance model;
 		public ModelComponent(ModelInstance model) {
 			this.model = model;
 		}
@@ -265,7 +276,7 @@ public class LogicHandler {
 	}
 
 	public interface ModelInstanceProvider {
-		ModelInstance createModel(Vector3 position);
+		ModelInstance createModel(Entity e, Vector3 position);
 	}
 
 	private interface AttractorProvider {
@@ -304,7 +315,7 @@ public class LogicHandler {
 		}
 	});
 
-	private class Prey implements Component {};
+	public class Prey implements Component {};
 
-	private class Predator implements Component {};
+	public class Predator implements Component {};
 }

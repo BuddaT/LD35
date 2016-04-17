@@ -63,6 +63,10 @@ public class Level {
 			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPrey(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
 		}
 		
+		for (int i = 0; i < wolfCount; i++) {
+			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPredator(new Vector3(5f + 10f * i, 0f, 15f), new Vector3()));
+		}
+		
 		wolfTB.ext(0f, 10f, 0f);
 		sheepPen.ext(0f, 10f, 0f);
 	}
