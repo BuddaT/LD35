@@ -87,23 +87,25 @@ public class WorldRenderer implements ProjectionTranslator {
 		instances.add(worldModelInstance);
 		instances.add(playerModelInstance);
 
-		currentLevel = new Level(2, 1, 1.0f);
+		currentLevel = new Level(10, 2, 1.0f);
 		
 		instances.addAll(currentLevel.getCollisionModels());
 		instances.add(currentLevel.getSheepPenModel());
-		instances.add(currentLevel.getWolfTransformModel());
+		instances.addAll(currentLevel.getWolfTransformModels());
 		
 		GraphicsHandler.getLogicHandler().createCreatures(
 				new LogicHandler.ModelInstanceProvider() {
 					@Override
 					public ModelInstance createModel(Entity e, Vector3 position) {
-						ModelInstance model = ModelFactory.createCustomModel(GraphicsHandler.MDL_SHEEP);
+						ModelInstance model;
+						if (e.getComponent(Predator.class) != null)
+							model = ModelFactory.createCustomModel(GraphicsHandler.MDL_WOLF);
+						else
+							model = ModelFactory.createCustomModel(GraphicsHandler.MDL_SHEEP);
 						model.transform.setToTranslation(position);
+						
 						instances.add(model);
 						
-						if (e.getComponent(Predator.class) != null)
-							model.materials.get(1).set(ColorAttribute.createDiffuse(Color.RED));
-
 						AnimationController anim = new AnimationController(model);
 						anim.setAnimation(model.animations.first().id, -1);
 						anim.update(MathUtils.random(anim.current.duration));

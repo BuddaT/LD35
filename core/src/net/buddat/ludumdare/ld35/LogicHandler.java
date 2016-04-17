@@ -345,6 +345,8 @@ public class LogicHandler {
 	}
 
 	public class Prey implements Component {};
+	
+	public class PredatorHidden implements Component {};
 
 	public class Predator implements Component {};
 }

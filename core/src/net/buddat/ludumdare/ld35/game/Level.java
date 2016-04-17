@@ -25,6 +25,7 @@ public class Level {
 	private final int wolfCount;
 
 	private final float complexity;
+	private final float hiddenSheepChance;
 
 	private final Array<ModelInstance> collisions = new Array<ModelInstance>();
 	private final HashMap<ModelInstance, BoundingBox> collisionBoxes = new HashMap<ModelInstance, BoundingBox>();
@@ -32,8 +33,8 @@ public class Level {
 	private BoundingBox sheepPen;
 	private ModelInstance sheepPenModel;
 	
-	private BoundingBox wolfTB;
-	private ModelInstance wolfTransform;
+	private Array<BoundingBox> wolfTB;
+	private Array<ModelInstance> wolfMB;
 	
 	private BoundingBox mapBox;
 	private ModelInstance mapModel;
@@ -45,6 +46,8 @@ public class Level {
 		this.sheepCount = sheepCount;
 		this.wolfCount = wolfCount;
 		this.complexity = complexity;
+		
+		this.hiddenSheepChance = 1f / (sheepCount / (10f / complexity));
 
 		this.engine = new Engine();
 
@@ -65,19 +68,26 @@ public class Level {
 		createWolfTransform(mapSize);
 		
 		for (int i = 0; i < sheepCount; i++) {
-			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPrey(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
+			float posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			float posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			
+			Entity sheepEntity = GraphicsHandler.getLogicHandler().createNewPrey(new Vector3(posX, 0f, posZ), new Vector3());
+			
+			if (MathUtils.randomBoolean(hiddenSheepChance))
+				sheepEntity.add(GraphicsHandler.getLogicHandler().new PredatorHidden());
+			engine.addEntity(sheepEntity);
 		}
 		
 		for (int i = 0; i < wolfCount; i++) {
-			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPredator(new Vector3(5f + 10f * i, 0f, 15f), new Vector3()));
+			float posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			float posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			
+			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPredator(new Vector3(posX, 0f, posZ), new Vector3()));
 		}
 		
 		for (int i = 0; i < mapSize / (10f / complexity); i++) {
 			createTree(mapSize, 0.5f);
 		}
-		
-		wolfTB.ext(0f, 10f, 0f);
-		sheepPen.ext(0f, 10f, 0f);
 	}
 
 	private ModelInstance newCollision(float x, float y, float z, float scale, float rotation, String model) {
@@ -134,8 +144,8 @@ public class Level {
 		return sheepPenModel;
 	}
 	
-	public ModelInstance getWolfTransformModel() {
-		return wolfTransform;
+	public Array<ModelInstance> getWolfTransformModels() {
+		return wolfMB;
 	}
 
 	public Entity getPlayer() {
@@ -182,8 +192,9 @@ public class Level {
 			if (okay) {
 				if (treeBB.intersects(sheepPen))
 					okay = false;
-				if (treeBB.intersects(wolfTB))
-					okay = false;
+				for (BoundingBox b : wolfTB)
+					if (treeBB.intersects(b))
+						okay = false;
 			}
 		} while (!okay);
 		
@@ -191,18 +202,26 @@ public class Level {
 	}
 	
 	private void createWolfTransform(float mapSize) {
-		wolfTB = new BoundingBox();
-		wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
+		wolfTB = new Array<BoundingBox>();
+		wolfMB = new Array<ModelInstance>();
 		
-		do {
-			float penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
-			float penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+		for (int i = 0; i < mapSize / 50f; i++) {
+			BoundingBox wolfBB = new BoundingBox();
+			ModelInstance wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
 			
-			wolfTransform.transform.setToTranslation(penLocX, 0f, penLocZ);
+			do {
+				float penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				float penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				
+				wolfTransform.transform.setToTranslation(penLocX, 0f, penLocZ);
+				
+				wolfBB = wolfTransform.calculateBoundingBox(wolfBB);
+				updateBoundingBox(wolfTransform, wolfBB);
+			} while (ModelFactory.intersectsWith(wolfBB, sheepPen) || !mapBox.contains(wolfBB));
 			
-			wolfTB = wolfTransform.calculateBoundingBox(wolfTB);
-			updateBoundingBox(wolfTransform, wolfTB);
-		} while (ModelFactory.intersectsWith(wolfTB, sheepPen) || !mapBox.contains(wolfTB));
+			wolfTB.add(wolfBB);
+			wolfMB.add(wolfTransform);
+		}
 	}
 
 	private void createSheepPen(float mapSize, int penW, int penH) {
