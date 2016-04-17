@@ -205,16 +205,21 @@ public class LogicHandler {
 		for (int i = 0; i < entities.size(); i++) {
 			Entity entity = entities.get(i);
 			Position posn = POSN_MAPPER.get(entity);
-			Movement mvmnt = MVMNT_MAPPER.get(entity);
+			Movement movement = MVMNT_MAPPER.get(entity);
 			Vector3 change;
+
 			boolean isPrey = entity.getComponent(Prey.class) != null;
 			boolean isPredator = entity.getComponent(Predator.class) != null;
-
 			// Attempt to move away from the player
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
 			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
 				float speed = PLAYER_EFFECT_RANGE / (dist2ToPlayer * dist2ToPlayer);
 				change = movementCalculator.awayFrom(posn, playerPosn).nor().scl(speed).clamp(0, EVASION_SPEED);
+				if (isPredator) {
+					// Moving away from the player overrides all else
+					prepareMovement(movement, change);
+					continue;
+				}
 			} else {
 				change = new Vector3();
 			}
@@ -253,16 +258,28 @@ public class LogicHandler {
 				float speed = PREY_ATTRACTOR_SPEEDS.get(attractorType);
 				change.add(attractantChange.clamp(0, speed));
 			}
-
-			change.clamp(0, MAX_SPEED);
-			// any y values for now are set to default height
-			change.y = DEFAULT_HEIGHT;
-			// velocity changes to the average between the desired and current. This doesn't work as intended yet
-			mvmnt.velocity.add(change).scl(0.5f);
-			mvmnt.rotation.set(change).nor();
+			prepareMovement(movement, change);
 		}
 	}
 
+	/**
+	 * Prepares movement updates based on change
+	 * @param movement Movement to be updated
+	 * @param change Changes to movement
+	 */
+	public void prepareMovement(Movement movement, Vector3 change) {
+		change.clamp(0, MAX_SPEED);
+		// any y values for now are set to default height
+		change.y = DEFAULT_HEIGHT;
+		// velocity changes to the average between the desired and current. This doesn't work as intended yet
+		movement.velocity.add(change).scl(0.5f);
+		movement.rotation.set(change).nor();
+	}
+
+	/**
+	 * Applies movement changes to positions
+	 * @param entities All entities to be moved
+	 */
 	public void applyMovementChanges(ImmutableArray<Entity> entities) {
 		// now apply the changes to each position
 		Vector3 up = UP.copy();
