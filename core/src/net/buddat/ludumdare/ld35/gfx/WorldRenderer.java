@@ -40,6 +40,8 @@ public class WorldRenderer implements ProjectionTranslator {
 	private PerspectiveCamera playerCam, sunCam;
 
 	private final Array<ModelInstance> instances = new Array<ModelInstance>();
+	private final Array<ModelInstance> noshadowInstance = new Array<ModelInstance>();
+
 	private final HashMap<ModelInstance, AnimationController> animations = new HashMap<ModelInstance, AnimationController>();
 
 	public WorldRenderer() {
@@ -115,7 +117,7 @@ public class WorldRenderer implements ProjectionTranslator {
 				model.transform.setToTranslation(-250f + (i * 5f), 0f, -250f + (j * 5f));
 				model.transform.rotate(Vector3.Y, MathUtils.random() * 180f);
 
-				instances.add(model);
+				noshadowInstance.add(model);
 			}
 
 		instances.add(worldModelInstance);
@@ -180,6 +182,7 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		modelBatch.begin(playerCam);
 		modelBatch.render(instances, worldEnvironment);
+		modelBatch.render(noshadowInstance, worldEnvironment);
 		modelBatch.end();
 
 		timeSinceLastRender = 0;
