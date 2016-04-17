@@ -137,6 +137,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		testLevel = new Level(10, 10, 1.0f);
 		instances.addAll(testLevel.getCollisionModels());
 		instances.add(testLevel.getSheepPenModel());
+		instances.add(testLevel.getWolfTransformModel());
 	}
 
 	private boolean reverseY = false;

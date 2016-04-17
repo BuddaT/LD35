@@ -1,5 +1,7 @@
 package net.buddat.ludumdare.ld35.game;
 
+import java.util.HashMap;
+
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.graphics.Color;
@@ -25,10 +27,13 @@ public class Level {
 	private final float complexity;
 
 	private final Array<ModelInstance> collisions = new Array<ModelInstance>();
-	private final Array<BoundingBox> collisionBoxes = new Array<BoundingBox>();
+	private final HashMap<ModelInstance, BoundingBox> collisionBoxes = new HashMap<ModelInstance, BoundingBox>();
 
 	private BoundingBox sheepPen;
 	private ModelInstance sheepPenModel;
+	
+	private BoundingBox wolfTB;
+	private ModelInstance wolfTransform;
 
 	private final Engine engine;
 	private Entity player;
@@ -40,10 +45,10 @@ public class Level {
 
 		this.engine = new Engine();
 
-		generateLevel();
+		generateLevel(75f);
 	}
 
-	private void generateLevel() {
+	private void generateLevel(float mapSize) {
 		player = new Entity();
 		player.add(new Position(new Vector3(), new Vector3()));
 		player.add(new Movement(0, 0, 0, 0, 0, 0));
@@ -51,16 +56,35 @@ public class Level {
 
 		engine.addEntity(player);
 
-		createSheepPen(150f, SHEEP_PEN_W, SHEEP_PEN_H);
+		createSheepPen(mapSize, SHEEP_PEN_W, SHEEP_PEN_H);
+		updateBoundingBox(sheepPenModel, sheepPen);
+		
+		createWolfTransform(mapSize);
+		
+		wolfTB.ext(0f, 10f, 0f);
+		sheepPen.ext(0f, 10f, 0f);
 	}
 
 	private ModelInstance newCollision(float x, float y, float z, float scale, float rotation, String model) {
 		ModelInstance c = ModelFactory.createCustomModel(model);
 		c.transform.setToTranslation(x, y, z).rotate(Vector3.Y, rotation).scale(scale, scale, scale);
 
-		addCollisionBox(c.calculateBoundingBox(new BoundingBox()));
+		addCollisionBox(c, c.calculateBoundingBox(new BoundingBox()));
 
 		return c;
+	}
+	
+	public void updateBoundingBox(ModelInstance m) {
+		if (collisionBoxes.containsKey(m)) {
+			updateBoundingBox(m, collisionBoxes.get(m));
+		} else {
+			addCollisionBox(m, m.calculateBoundingBox(new BoundingBox()));
+			updateBoundingBox(m);
+		}
+	}
+	
+	public static void updateBoundingBox(ModelInstance m, BoundingBox b) {
+		b.set(b.min.add(m.transform.getTranslation(Vector3.X)), b.max.add(m.transform.getTranslation(Vector3.X)));
 	}
 
 	public void addCollisionModel(ModelInstance c) {
@@ -70,18 +94,18 @@ public class Level {
 		collisions.add(c);
 	}
 
-	public void addCollisionBox(BoundingBox b) {
-		if (collisionBoxes.contains(b, false))
+	public void addCollisionBox(ModelInstance m, BoundingBox b) {
+		if (collisionBoxes.containsKey(m))
 			return;
 
-		collisionBoxes.add(b);
+		collisionBoxes.put(m, b);
 	}
 
 	public Array<ModelInstance> getCollisionModels() {
 		return collisions;
 	}
 
-	public Array<BoundingBox> getCollisionBoxes() {
+	public HashMap<ModelInstance, BoundingBox> getCollisionBoxes() {
 		return collisionBoxes;
 	}
 	
@@ -91,6 +115,10 @@ public class Level {
 
 	public ModelInstance getSheepPenModel() {
 		return sheepPenModel;
+	}
+	
+	public ModelInstance getWolfTransformModel() {
+		return wolfTransform;
 	}
 
 	public Entity getPlayer() {
@@ -104,6 +132,21 @@ public class Level {
 	public void dispose() {
 		collisions.clear();
 		engine.removeAllEntities();
+	}
+	
+	private void createWolfTransform(float mapSize) {
+		wolfTB = new BoundingBox();
+		
+		do {
+			float penLocX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			float penLocZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			
+			wolfTransform = ModelFactory.createBoxModel(10f, 0.5f, 10f, new Color(0.8f, 0.2f, 0.2f, 1f));
+			wolfTransform.transform.setToTranslation(penLocX, 0f, penLocZ);
+			
+			wolfTB = wolfTransform.calculateBoundingBox(wolfTB);
+			updateBoundingBox(wolfTransform, wolfTB);
+		} while (ModelFactory.intersectsWith(wolfTB, sheepPen));
 	}
 
 	private void createSheepPen(float mapSize, int penW, int penH) {
@@ -119,6 +162,8 @@ public class Level {
 		sheepPenModel = ModelFactory.createBoxModel(sheepPen.getWidth(), 0.5f, sheepPen.getDepth(),
 				new Color(0.5f, 0.5f, 0.5f, 1f));
 		sheepPenModel.transform.setTranslation(penLocX + fenceB.getWidth(), 0, penLocZ + fenceB.getWidth());
+		
+		sheepPen = sheepPenModel.calculateBoundingBox(sheepPen);
 
 		int entryPoint = MathUtils.random(penW - 1);
 		boolean x = false;

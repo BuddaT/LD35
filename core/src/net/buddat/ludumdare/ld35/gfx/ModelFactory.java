@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 
@@ -33,4 +35,15 @@ public class ModelFactory {
 
 		return new ModelInstance(model);
 	}
+	
+	public static boolean intersectsWith(BoundingBox boundingBox1, BoundingBox boundingBox2) {
+        Vector3 otherMin = boundingBox1.min;
+        Vector3 otherMax = boundingBox1.max;
+        Vector3 min = boundingBox2.min;
+        Vector3 max = boundingBox2.max;
+
+        return (min.x < otherMax.x) && (max.x > otherMin.x)
+            && (min.y < otherMax.y) && (max.y > otherMin.y)
+            && (min.z < otherMax.z) && (max.z > otherMin.z);
+    }
 }
