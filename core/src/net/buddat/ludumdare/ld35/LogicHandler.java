@@ -32,9 +32,10 @@ public class LogicHandler {
 	public static final ComponentMapper<FlockAttractor> ATTRACTOR_MAPPER =
 			ComponentMapper.getFor(FlockAttractor.class);
 
-	private static final float PLAYER_EFFECT_RANGE = 1;
+	// Distance to player within which evasion is attempted (^ 2)
+	private static final float PLAYER_EFFECT_RANGE = 20*20;
 	// Speed at which evasion is attempted
-	private static final float EVASION_SPEED = 1;
+	private static final float EVASION_SPEED = 5;
 	// Distance to calculate crowding (^ 2 to avoid sqrt)
 	private static final float CROWDING_RANGE = 10*10;
 	private static final float CROWDING_SPEED = 0.5f;
@@ -74,6 +75,7 @@ public class LogicHandler {
 		player.add(new Position(new Vector3(), new Vector3()));
 		player.add(new Movement(0, 0, 0, 0, 0, 0));
 		player.add(new Mouseable());
+
 		engine.addEntity(player);
 		for (int i = 0; i < NUM_CREATURES; i++) {
 			engine.addEntity(createNewCreature(new Vector3(5f + 10f * i, 0f, 5f), new Vector3()));
@@ -109,8 +111,13 @@ public class LogicHandler {
 			Vector3 change;
 
 			// Attempt to move away from the player
-			if (posn.position.dst2(playerPosn.position) <= PLAYER_EFFECT_RANGE) {
-				change = new Vector3(posn.position).sub(playerPosn.position).nor().scl(EVASION_SPEED);
+			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
+			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
+				float acceleration = PLAYER_EFFECT_RANGE/(dist2ToPlayer * dist2ToPlayer);
+				Vector3 vectorAway = awayFrom(posn, playerPosn).nor().scl(acceleration);
+				change = awayFrom(posn, playerPosn).nor().scl(acceleration).clamp(0, EVASION_SPEED);
+				System.out.println(posn.position + " to " + playerPosn.position +
+						" = " + posn.position.dst2(playerPosn.position) + ", accel = " + acceleration);
 			} else {
 				change = new Vector3();
 			}
@@ -131,16 +138,18 @@ public class LogicHandler {
 				FlockAttractor attractor = ATTRACTOR_MAPPER.get(entity);
 				if (distance <= attractor.getMaxRange()) {
 					float acceleration = ATTRACTOR_MAPPER.get(entity).getAcceleration(distance);
-					Vector3 crowdDirection = new Vector3(posn.position).sub(otherPosn.position).nor();
+					Vector3 crowdDirection = awayFrom(posn, otherPosn).nor();
 					crowdingChange.add(crowdDirection.scl(acceleration));
 				}
 				if (distance <= COHESION_RANGE) {
-					cohesionChange.add(new Vector3(otherPosn.position).sub(posn.position).nor());
+					cohesionChange.add(towards(posn, otherPosn).nor());
 				}
 			}
 			crowdingChange.clamp(0, CROWDING_SPEED);
 			cohesionChange.clamp(0, COHESION_SPEED);
 			change.add(crowdingChange).add(cohesionChange).clamp(0, MAX_SPEED);
+			// zero any y values for now
+			change.y = 0;
 			// velocity changes to the average between the desired and current
 			mvmnt.velocity.add(change).scl(0.5f);
 		}
@@ -152,6 +161,16 @@ public class LogicHandler {
 			posn.position.add(change);
 			MODEL_MAPPER.get(entity).model.transform.translate(change);
 		}
+	}
+
+	// Calculates a new vector from the origin away from the target
+	private Vector3 awayFrom(Position origin, Position target) {
+		return new Vector3(origin.position).sub(target.position);
+	}
+
+	// Calculates a new vector from the origin to the target
+	private Vector3 towards(Position origin, Position target) {
+		return new Vector3(target.position).sub(origin.position);
 	}
 
 	public void createCreatures(ModelInstanceProvider modelProvider) {

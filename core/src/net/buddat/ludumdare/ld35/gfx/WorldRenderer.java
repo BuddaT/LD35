@@ -151,10 +151,9 @@ public class WorldRenderer implements ProjectionTranslator {
 		for (AnimationController a : animations.values())
 			a.update(delta);
 
-		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 0f,
-				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
+		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
 		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, 30f,
-				GraphicsHandler.getLogicHandler().getPlayerPosn().y);
+				GraphicsHandler.getLogicHandler().getPlayerPosn().z);
 		playerCam.update();
 	}
 
@@ -192,15 +191,10 @@ public class WorldRenderer implements ProjectionTranslator {
 		modelBatch.dispose();
 	}
 
-	public PerspectiveCamera getPlayerCamera() {
-		return playerCam;
-	}
-
 	@Override
 	public Vector3 unproject(int x, int y) {
 		Vector3 worldPosition = playerCam.unproject(new Vector3(x, y, 0));
-		worldPosition.y = worldPosition.z;
-		worldPosition.z = 0;
+		worldPosition.y = 0;
 		return worldPosition;
 	}
 }
