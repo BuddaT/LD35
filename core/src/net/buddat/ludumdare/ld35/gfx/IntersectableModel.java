@@ -18,13 +18,13 @@ public class IntersectableModel extends ModelInstance {
 		
 		bounds = calculateBoundingBox(bounds);
 		collision = new Polygon(new float[] {
-				0, 0, 
-				bounds.getWidth(), 0,
-				bounds.getWidth(), bounds.getDepth(), 
-				0, bounds.getDepth()
+				bounds.min.x, bounds.min.z, 
+				bounds.max.x, bounds.min.z,
+				bounds.max.x, bounds.max.z, 
+				bounds.min.x, bounds.max.z
 			});
 		
-		collision.setOrigin(0, 0);
+		collision.setOrigin(bounds.getCenterX(), bounds.getCenterZ());
 	}
 
 	public boolean intersects(IntersectableModel m) {
@@ -45,6 +45,10 @@ public class IntersectableModel extends ModelInstance {
 	public void updateCollisions() {
 		collision.setPosition(transform.getTranslation(new Vector3()).x, transform.getTranslation(new Vector3()).z);
 		collision.setRotation(transform.getRotation(new Quaternion()).getAngleAround(Vector3.Y));
+		
+		if (transform.getRotation(new Quaternion()).getAngleAround(Vector3.Y) != 0f)
+			collision.translate(0f, bounds.getWidth());
+		
 		collision.setScale(transform.getScaleX(), transform.getScaleZ());
 	}
 }
