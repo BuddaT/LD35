@@ -47,7 +47,7 @@ public class Level {
 		this.wolfCount = wolfCount;
 		this.complexity = complexity;
 		
-		this.hiddenSheepChance = 1f / (sheepCount / (10f / complexity));
+		this.hiddenSheepChance = 0.1f * complexity;
 
 		this.engine = new Engine();
 
@@ -75,6 +75,7 @@ public class Level {
 			
 			if (MathUtils.randomBoolean(hiddenSheepChance))
 				sheepEntity.add(GraphicsHandler.getLogicHandler().new PredatorHidden());
+			
 			engine.addEntity(sheepEntity);
 		}
 		

@@ -28,7 +28,7 @@ import net.buddat.ludumdare.ld35.game.Level;
 public class WorldRenderer implements ProjectionTranslator {
 
 	private static final float SUN_MOVEMENT_SPEED = 0.001f;
-	private static final float CAMERA_HEIGHT = 80f;
+	private static final float CAMERA_HEIGHT = 45f;
 
 	private Environment worldEnvironment;
 
