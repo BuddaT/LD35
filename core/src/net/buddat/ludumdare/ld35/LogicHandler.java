@@ -316,37 +316,6 @@ public class LogicHandler {
 					collision = true;
 					break;
 				}
-				
-				// yuck
-				/*BoundingBox box = boxes.get(boxModel);
-				Vector2 topLeft = createXZVector(box.getCorner000(new Vector3()));
-				Vector2 topRight = createXZVector(box.getCorner100(new Vector3()));
-				Vector2 bottomLeft = createXZVector(box.getCorner001(new Vector3()));
-				Vector2 bottomRight = createXZVector(box.getCorner101(new Vector3()));
-				// Does the movement vector cross through the bounding box?
-				// Assumes we are not already inside a bounding box
-				Vector2 intersection = new Vector2();
-				ArrayList<Vector2> intersections = new ArrayList<Vector2>();
-				if (Intersector.intersectSegments(topLeft, topRight, start, end, intersection)) {
-					collision = true;
-					break;
-				}
-				intersection = new Vector2();
-				if (Intersector.intersectSegments(topRight, bottomRight, start, end, intersection)) {
-					collision = true;
-					break;
-				}
-				intersection = new Vector2();
-				if (Intersector.intersectSegments(bottomRight, bottomLeft, start, end, intersection)) {
-					collision = true;
-					break;
-				}
-				intersection = new Vector2();
-				if (Intersector.intersectSegments(bottomLeft, topLeft, start, end, intersection)) {
-					collision = true;
-					break;
-				}*/
-				// Does not intersect any bounding boxes
 			}
 			// Don't change position if it results in a collision
 			if (collision) {
