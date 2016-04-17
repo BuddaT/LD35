@@ -9,7 +9,7 @@ public class CohesionAttractor extends FlockAttractor {
 
 	@Override
 	public float getAcceleration(float distance) {
-		return COHESION_RANGE;
+		return 1;
 	}
 
 	@Override
