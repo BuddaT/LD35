@@ -70,17 +70,22 @@ public class LogicHandler {
 		creature.add(new Movement(0, 0, 0, 0, 0, 0));
 		CrowdingAttractor creatureFlockAttractor = new CrowdingAttractor();
 		creature.add(creatureFlockAttractor);
+		CohesionAttractor cohesionAttractor = new CohesionAttractor();
+		creature.add(cohesionAttractor);
 		creature.add(new Prey());
 		return creature;
 	}
 
 	private List<FlockAttractor> getPreyAttractors(Entity entity) {
 		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
-		FlockAttractor crowdingAttractor = CROWDING_MAPPER.get(entity);
-		if (crowdingAttractor != null) {
+		FlockAttractor attractor = CROWDING_MAPPER.get(entity);
+		if (attractor != null) {
 			attractors.add(CROWDING_MAPPER.get(entity));
 		}
-		// attractors.add(COHESION_MAPPER.get(entity));
+		attractor = COHESION_MAPPER.get(entity);
+		if (attractor != null) {
+			attractors.add(attractor);
+		}
 		return attractors;
 	}
 
@@ -140,7 +145,6 @@ public class LogicHandler {
 			} else {
 				change = new Vector3();
 			}
-			Vector3 cohesionChange = new Vector3();
 
 			// Try to avoid crowding neighbors, yet keep in distance
 			ImmutableArray<Entity> others = engine.getEntitiesFor(sheep);
@@ -166,21 +170,15 @@ public class LogicHandler {
 						attractors.get(attractor.getAttractantType()).add(direction.scl(acceleration));
 					}
 				}
-				if (distance <= COHESION_RANGE) {
-					cohesionChange.add(towards(posn, otherPosn).nor());
-				}
 			}
-			cohesionChange.clamp(0, COHESION_SPEED);
 
 			for (AttractorType attractorType : AttractorType.values()) {
-				if (!(attractorType.equals(AttractorType.CROWDING))) {
-					continue;
-				}
 				Vector3 attractantChange = attractors.get(attractorType);
-				change.add(attractantChange.clamp(0, PREY_ATTRACTOR_SPEEDS.get(attractorType)));
+				float speed = PREY_ATTRACTOR_SPEEDS.get(attractorType);
+				change.add(attractantChange.clamp(0, speed));
 			}
 
-			change.add(cohesionChange);
+			//change.add(cohesionChange);
 			change.clamp(0, MAX_SPEED);
 			// zero any y values for now
 			change.y = 0;
@@ -195,7 +193,11 @@ public class LogicHandler {
 			Vector3 change = MVMNT_MAPPER.get(entity).velocity;
 			posn.position.add(change);
 			ModelInstance model = MODEL_MAPPER.get(entity).model;
-			model.transform.setToLookAt(change, up).setTranslation(posn.position);
+			if (!change.isZero()) {
+				Vector3 lookDirection = new Vector3(change).nor();
+				model.transform.setToLookAt(lookDirection, up);
+			}
+			model.transform.setTranslation(posn.position);
 		}
 	}
 
