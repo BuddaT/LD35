@@ -166,10 +166,10 @@ public class LogicHandler {
 				attractors.put(attractorType, new Vector3());
 			}
 			for (int j = 0; j < others.size(); j++) {
-				if (i == j) {
+				Entity other = others.get(j);
+				if (entity == other) {
 					continue;
 				}
-				Entity other = others.get(j);
 				Position otherPosn = POSN_MAPPER.get(other);
 				float distance = posn.position.dst2(otherPosn.position);
 				// Calculate total attraction for each attraction type
