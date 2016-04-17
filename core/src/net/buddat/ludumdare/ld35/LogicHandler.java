@@ -33,6 +33,12 @@ public class LogicHandler {
 			ComponentMapper.getFor(CrowdingRepulsor.class);
 	private static final ComponentMapper<CohesionAttractor> COHESION_MAPPER =
 			ComponentMapper.getFor(CohesionAttractor.class);
+	private static final ComponentMapper<PredatorPreyRepulsor> PREDATOR_PREY_MAPPER =
+			ComponentMapper.getFor(PredatorPreyRepulsor.class);
+	private static final ComponentMapper<PreyPredatorAttractor> PREY_PREDATOR_MAPPER =
+			ComponentMapper.getFor(PreyPredatorAttractor.class);
+	private static final ComponentMapper<AttractedLister> ATTRACTED_LISTER_MAPPER =
+			ComponentMapper.getFor(AttractedLister.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
@@ -84,26 +90,37 @@ public class LogicHandler {
 		Entity creature = createNewCreature(position, rotation);
 		creature.add(new CrowdingRepulsor())
 				.add(new CohesionAttractor())
-				.add(new Prey());
+				.add(new PreyPredatorAttractor())
+				.add(new Prey())
+				.add(PREY_ATTRACTORS_LISTER);
 		return creature;
 	}
 
 	public Entity createNewPredator(Vector3 position, Vector3 rotation) {
 		Entity creature = createNewCreature(position, rotation);
 		creature.add(new PredatorPreyRepulsor())
-				.add(new Predator());
+				.add(new Predator())
+				.add(PREDATOR_ATTRACTORS_LIST);
 		return creature;
 	}
 
-	private List<FlockAttractor> getPreyAttractors(Entity entity) {
+	private static List<FlockAttractor> getPreyAttractors(Entity entity) {
 		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
 		for (FlockAttractor attractor : new FlockAttractor[] {
 				CROWDING_MAPPER.get(entity),
-				COHESION_MAPPER.get(entity)}) {
+				COHESION_MAPPER.get(entity),
+				PREDATOR_PREY_MAPPER.get(entity)
+		}) {
 			if (attractor != null) {
 				attractors.add(attractor);
 			}
 		}
+		return attractors;
+	}
+
+	private static List<FlockAttractor> getPredatorAttractors(Entity entity) {
+		List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
+		attractors.add(PREY_PREDATOR_MAPPER.get(entity));
 		return attractors;
 	}
 
@@ -138,7 +155,7 @@ public class LogicHandler {
 		Engine engine = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
 		Entity player = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getPlayer();
 		
-		ImmutableArray<Entity> entities = engine.getEntitiesFor(sheep);
+		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
 		Position playerPosn = POSN_MAPPER.get(player);
 
 		// First calculate change in position for all objects.
@@ -173,7 +190,8 @@ public class LogicHandler {
 				Position otherPosn = POSN_MAPPER.get(other);
 				float distance = posn.position.dst2(otherPosn.position);
 				// Calculate total attraction for each attraction type
-				for (FlockAttractor attractor : getPreyAttractors(entity)) {
+				AttractedLister lister = ATTRACTED_LISTER_MAPPER.get(entity);
+				for (FlockAttractor attractor : lister.getAttractors(entity)) {
 					if (distance <= attractor.getMaxRange()) {
 						float speed = attractor.getBaseSpeed(distance);
 						Vector3 direction = movementCalculator.towards(posn, otherPosn).nor();
@@ -250,13 +268,43 @@ public class LogicHandler {
 		ModelInstance createModel(Vector3 position);
 	}
 
-	/**
-	 * Marker class for prey
-	 */
-	private class Prey implements Component {};
+	private interface AttractorProvider {
+		List<FlockAttractor> getAttractors(Entity entity);
+	}
+
+	private static class AttractedLister implements Component {
+		private final AttractorProvider provider;
+
+		public AttractedLister(AttractorProvider provider) {
+			this.provider = provider;
+		}
+
+		List<FlockAttractor> getAttractors(Entity entity) {
+			return provider.getAttractors(entity);
+		}
+	}
 
 	/**
-	 * Marker class for predators
+	 * Provides all attractors for prey
 	 */
+	private static final AttractedLister PREY_ATTRACTORS_LISTER = new AttractedLister(new AttractorProvider() {
+		@Override
+		public List<FlockAttractor> getAttractors(Entity entity) {
+			return getPreyAttractors(entity);
+		}
+	});
+
+	/**
+	 * Provides all attractors for predators
+	 */
+	private static final AttractedLister PREDATOR_ATTRACTORS_LIST = new AttractedLister(new AttractorProvider() {
+		@Override
+		public List<FlockAttractor> getAttractors(Entity entity) {
+			return getPredatorAttractors(entity);
+		}
+	});
+
+	private class Prey implements Component {};
+
 	private class Predator implements Component {};
 }
