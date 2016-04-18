@@ -11,7 +11,6 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -33,7 +32,7 @@ import net.buddat.ludumdare.ld35.math.MovementCalculator;
 public class LogicHandler {
 	private static final int NUM_CREATURES = 5;
 	private Family creatures;
-	private Family prey;
+	private Family preyFamily;
 	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
 	private static final ComponentMapper<Movement> MVMNT_MAPPER =
@@ -53,6 +52,8 @@ public class LogicHandler {
 			ComponentMapper.getFor(AttractedByLister.class);
 	private static final ComponentMapper<Prey> PREY_MAPPER =
 			ComponentMapper.getFor(Prey.class);
+	private static final ComponentMapper<Predator> PREDATOR_MAPPER =
+			ComponentMapper.getFor(Predator.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
@@ -99,13 +100,17 @@ public class LogicHandler {
 		@Override
 		public List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
 			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
-			for (FlockAttractor attractor : new FlockAttractor[] {
-					CROWDING_MAPPER.get(entity),
-					COHESION_MAPPER.get(entity),
-					PREDATOR_PREY_MAPPER.get(entity)
-			}) {
-				if (attractor != null) {
-					attractors.add(attractor);
+			Prey prey = PREY_MAPPER.get(entity);
+			if (prey != null && !prey.isDead()) {
+				// only return attractors for live prey
+				for (FlockAttractor attractor : new FlockAttractor[]{
+						CROWDING_MAPPER.get(entity),
+						COHESION_MAPPER.get(entity),
+						PREDATOR_PREY_MAPPER.get(entity)
+				}) {
+					if (attractor != null) {
+						attractors.add(attractor);
+					}
 				}
 			}
 			return attractors;
@@ -119,9 +124,12 @@ public class LogicHandler {
 		@Override
 		public List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
 			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
-			PreyPredatorAttractor attractor = PREY_PREDATOR_MAPPER.get(entity);
-			if (attractor != null) {
-				attractors.add(attractor);
+			Prey prey = PREY_MAPPER.get(entity);
+			if (prey != null && !prey.isDead()) {
+				PreyPredatorAttractor attractor = PREY_PREDATOR_MAPPER.get(entity);
+				if (attractor != null) {
+					attractors.add(attractor);
+				}
 			}
 			return attractors;
 		}
@@ -181,7 +189,7 @@ public class LogicHandler {
 
 	public void init() {
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
-		prey = Family.all(Prey.class).exclude(Mouseable.class).get();
+		preyFamily = Family.all(Prey.class).exclude(Mouseable.class).get();
 	}
 
 	private Level getCurrentLevel() {
@@ -323,6 +331,7 @@ public class LogicHandler {
 		// now apply the changes to each position
 		Vector3 up = UP.copy();
 		float buffer = 0.01f;
+		Engine engine = getCurrentLevel().getEngine();
 
 		Array<IntersectableModel> boxes = getCurrentLevel().getCollisionModels();
 		for (Entity entity : entities) {
@@ -344,15 +353,31 @@ public class LogicHandler {
 			model.updateCollisions();
 			Prey prey = PREY_MAPPER.get(entity);
 			if (PREY_MAPPER.get(entity) != null) {
-				if (getCurrentLevel().getSheepPenModel().contains(model)) {
-					prey.setPenned(true);
+				prey.setPenned(!prey.isDead()
+						&& getCurrentLevel().getSheepPenModel().contains(model));
+			}
+			Predator predator = PREDATOR_MAPPER.get(entity);
+			if (predator != null) {
+				// for each prey, if this predator intersects that prey, kill it.
+				ImmutableArray<Entity> potentialPreys = engine.getEntitiesFor(preyFamily);
+				for (int i = 0; i < potentialPreys.size(); i++) {
+					Entity potentialPrey = potentialPreys.get(i);
+					prey = PREY_MAPPER.get(potentialPreys.get(i));
+					if (prey == null) {
+						continue;
+					}
+					IntersectableModel preyModel = MODEL_MAPPER.get(potentialPrey).model;
+					if (preyModel.intersects(model)) {
+						prey.kill();
+						potentialPrey.remove(Movement.class);
+					}
 				}
 			}
 		}
 	}
 
 	public int getNumPenned() {
-		ImmutableArray<Entity> entities = getCurrentLevel().getEngine().getEntitiesFor(prey);
+		ImmutableArray<Entity> entities = getCurrentLevel().getEngine().getEntitiesFor(preyFamily);
 		int count = 0;
 		for (Entity entity : entities) {
 			Prey prey = PREY_MAPPER.get(entity);
@@ -364,7 +389,7 @@ public class LogicHandler {
 	}
 
 	public int getNumDead() {
-		ImmutableArray<Entity> entities = getCurrentLevel().getEngine().getEntitiesFor(prey);
+		ImmutableArray<Entity> entities = getCurrentLevel().getEngine().getEntitiesFor(preyFamily);
 		int count = 0;
 		for (Entity entity : entities) {
 			Prey prey = PREY_MAPPER.get(entity);
