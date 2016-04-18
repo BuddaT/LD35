@@ -198,6 +198,7 @@ public class WorldRenderer implements ProjectionTranslator {
 			entity.add(new LogicHandler.ModelComponent(newModel));
 			
 			wolfHowl.play();
+			currentLevel.transformCount++;
 		}
 
 		for (AnimationController a : animations.values())
@@ -215,7 +216,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		if (currentLevel.checkWin(logicHandler.getNumPenned())) {
 			pauseLogic = true;
 			levelWon = true;
-		} else if (currentLevel.checkLose(logicHandler.getNumDead())) {
+		} else if (currentLevel.checkLose(logicHandler.getNumDead() + currentLevel.transformCount)) {
 			pauseLogic = true;
 			levelLost = true;
 		}

@@ -22,6 +22,8 @@ public class IntersectableModel extends ModelInstance {
 		this.name = name;
 		
 		bounds = calculateBoundingBox(bounds);
+		bounds.ext(-(bounds.getWidth() * 0.2f), 0f, -(bounds.getDepth() * 0.2f));
+		
 		collision = new Polygon(new float[] {
 				bounds.min.x, bounds.min.z, 
 				bounds.max.x, bounds.min.z,

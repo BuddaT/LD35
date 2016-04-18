@@ -135,13 +135,13 @@ public class UIRenderer {
 				font.draw(batch, "Level Completed!", screenWidth / 2 - layout.width / 2, screenHeight / 2 + 200);
 				
 				font.getData().setScale(1.5f, 1f);
-				layout.setText(font, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount);
-				font.draw(batch, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount, 
+				layout.setText(font, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepToWin);
+				font.draw(batch, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepToWin, 
 						screenWidth / 2 - layout.width / 2, screenHeight / 2);
 				
 				font.setColor(Color.RED);
-				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount);
-				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount, 
+				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().deadToLose);
+				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().deadToLose, 
 						screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
 				
 				font.setColor(Color.WHITE);
@@ -173,13 +173,13 @@ public class UIRenderer {
 				font.draw(batch, "Level Lost!", screenWidth / 2 - layout.width / 2, screenHeight / 2 + 200);
 				
 				font.getData().setScale(1.5f, 1f);
-				layout.setText(font, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount);
-				font.draw(batch, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount, 
+				layout.setText(font, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepToWin);
+				font.draw(batch, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepToWin, 
 						screenWidth / 2 - layout.width / 2, screenHeight / 2);
 				
 				font.setColor(Color.RED);
-				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount);
-				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount, 
+				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().deadToLose);
+				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().deadToLose, 
 						screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
 				
 				font.setColor(Color.WHITE);
@@ -201,7 +201,7 @@ public class UIRenderer {
 				
 				font.setColor(Color.WHITE);
 				font.getData().setScale(1.5f, 1.5f);
-				font.draw(batch, "" + (sheepCount - GraphicsHandler.getLogicHandler().getNumDead()), 90, 120);
+				font.draw(batch, "" + (sheepCount - GraphicsHandler.getLogicHandler().getNumDead() - w.getCurrentLevel().transformCount), 90, 120);
 				font.draw(batch, "" + wolfCount, 90, 60);
 				
 				font.setColor(Color.GRAY);

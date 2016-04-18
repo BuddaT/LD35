@@ -24,8 +24,10 @@ public class Level {
 
 	public final int sheepCount;
 	public final int wolfCount;
-	private final int sheepToWin;
-	private final int deadToLose;
+	public final int sheepToWin;
+	public final int deadToLose;
+	
+	public int transformCount = 0;
 
 	public final float complexity;
 	private final float hiddenSheepChance;
@@ -85,7 +87,7 @@ public class Level {
 		createSheepPen(mapSize, penSize, penSize);
 		createWolfTransform(mapSize);
 		
-		for (int i = 0; i < mapSize / (10f / complexity); i++) {
+		for (int i = 0; i < mapSize / (20f / complexity); i++) {
 			createTree(mapSize, 0.5f);
 		}
 		
@@ -121,8 +123,25 @@ public class Level {
 		}
 		
 		for (int i = 0; i < wolfCount; i++) {
-			float posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
-			float posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			float posX;
+			float posZ;
+			
+			do {
+				fine = true;
+				
+				testVec.x = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				testVec.y = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				
+				if (sheepPenModel.lineIntersectsCollision(testVec, testVec) && complexity < 2f)
+					fine = false;
+				for (IntersectableModel m : collisions) {
+					if (m.lineIntersectsCollision(testVec, testVec))
+						fine = false;
+				}
+			} while (!fine);
+			
+			posX = testVec.x;
+			posZ = testVec.y;
 			
 			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPredator(new Vector3(posX, 0f, posZ), new Vector3()));
 		}
@@ -218,7 +237,7 @@ public class Level {
 				if (treeInstance.intersects(GraphicsHandler.getGraphicsHandler().getWorldRenderer().getPlayerModel()))
 					okay = false;
 
-				collisionModel = newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(1.5f), rotateAmnt, treeType);
+				collisionModel = newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(1f), rotateAmnt, treeType);
 				if (collisionModel.intersects(sheepPenModel)) {
 					collisionModel = null;
 					okay = false;
