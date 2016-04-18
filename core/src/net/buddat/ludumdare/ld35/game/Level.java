@@ -98,8 +98,7 @@ public class Level {
 		if (collisions.contains(c, false))
 			return;
 		
-		if (c.intersects(player.getComponent(LogicHandler.ModelComponent.class).model))
-			System.out.println("BORK");
+		c.updateCollisions();
 
 		collisions.add(c);
 	}
