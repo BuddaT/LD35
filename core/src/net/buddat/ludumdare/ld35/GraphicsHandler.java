@@ -62,9 +62,10 @@ public class GraphicsHandler extends ApplicationAdapter {
 			return;
 		}
 
-		GraphicsHandler.getLogicHandler().update();
+		if (!worldRenderer.pauseLogic)
+			GraphicsHandler.getLogicHandler().update();
+		
 		worldRenderer.update();
-
 		worldRenderer.render();
 
 		uiRenderer.render();

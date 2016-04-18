@@ -16,6 +16,7 @@ import net.buddat.ludumdare.ld35.entity.Prey;
 public class UIRenderer {
 	
 	private static final boolean DEBUG_DRAW_COLLISIONS = false;
+	private static final boolean DEBUG_DRAW_ENTITYINFO = true;
 
 	private SpriteBatch batch;
 	private BitmapFont font;
@@ -32,13 +33,16 @@ public class UIRenderer {
 		
 		font = new BitmapFont();
 		font.setColor(Color.WHITE);
-		font.getData().setScale(2f);
 	}
 
 	private static final int scale = 5, offset = 100;
 	public void render() {
-		Engine e = GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel().getEngine();
-		int sheepCount = 0, wolfCount = 0, hiddenSheepCount = 0;
+		WorldRenderer w = GraphicsHandler.getGraphicsHandler().getWorldRenderer();
+		LogicHandler l = GraphicsHandler.getLogicHandler();
+		Engine e = w.getCurrentLevel().getEngine();
+		
+		int sheepCount = w.getCurrentLevel().sheepCount;
+		int wolfCount = 0, hiddenSheepCount = 0;
 		
 		if (DEBUG_DRAW_COLLISIONS) {
 			shapes.begin(ShapeType.Filled);
@@ -65,10 +69,6 @@ public class UIRenderer {
 		}
 		
 		for (Entity ent : e.getEntities()) {
-			if (ent.getComponent(Prey.class) != null) {
-				if (!ent.getComponent(Prey.class).isDead())
-					sheepCount++;
-			}
 			if (ent.getComponent(LogicHandler.PredatorHidden.class) != null) {
 				if (!ent.getComponent(Prey.class).isDead())
 					hiddenSheepCount++;
@@ -77,13 +77,15 @@ public class UIRenderer {
 				wolfCount++;
 		}
 		
-		batch.begin();
-		font.draw(batch, "Sheep Count: " + sheepCount, 20, 140);
-		font.draw(batch, "Hidden Wolf Count: " + hiddenSheepCount, 20, 100);
-		font.draw(batch, "Wolf Count: " + wolfCount, 20, 60);
-		font.draw(batch, "Pen Count: " + GraphicsHandler.getLogicHandler().getNumPenned(), 20, 180);
-		font.draw(batch, "Dead Count: " + GraphicsHandler.getLogicHandler().getNumDead(), 20, 220);
-		batch.end();
+		if (DEBUG_DRAW_ENTITYINFO) {
+			batch.begin();
+			font.draw(batch, "Sheep Count: " + sheepCount, 20, 140);
+			font.draw(batch, "Hidden Wolf Count: " + hiddenSheepCount, 20, 100);
+			font.draw(batch, "Wolf Count: " + wolfCount, 20, 60);
+			font.draw(batch, "Pen Count: " + GraphicsHandler.getLogicHandler().getNumPenned(), 20, 180);
+			font.draw(batch, "Dead Count: " + GraphicsHandler.getLogicHandler().getNumDead(), 20, 220);
+			batch.end();
+		}
 	}
 
 	public void dispose() {

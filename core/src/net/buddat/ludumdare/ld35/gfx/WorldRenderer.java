@@ -50,6 +50,10 @@ public class WorldRenderer implements ProjectionTranslator {
 	private final HashMap<ModelInstance, AnimationController> animations = new HashMap<ModelInstance, AnimationController>();
 
 	private Level currentLevel;
+	
+	public boolean pauseLogic = false;
+	public boolean levelWon = false;
+	public boolean levelLost = false;
 
 	public WorldRenderer() {
 
@@ -165,8 +169,16 @@ public class WorldRenderer implements ProjectionTranslator {
 		playerCam.position.set(logicHandler.getPlayerPosn().x, CAMERA_HEIGHT,
 				logicHandler.getPlayerPosn().z);
 		playerCam.update();
+		
+		if (currentLevel.checkWin(logicHandler.getNumPenned())) {
+			pauseLogic = true;
+			levelWon = true;
+		} else if (currentLevel.checkLose(logicHandler.getNumDead())) {
+			pauseLogic = true;
+			levelLost = true;
+		}
 	}
-
+	
 	private static final float MIN_FRAME_LEN = 1f / GraphicsHandler.FPS_CAP;
 	private float timeSinceLastRender = 0;
 

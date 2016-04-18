@@ -20,8 +20,10 @@ public class Level {
 
 	private static final int SHEEP_PEN_W = 3, SHEEP_PEN_H = 3;
 
-	private final int sheepCount;
+	public final int sheepCount;
 	private final int wolfCount;
+	private final int sheepToWin;
+	private final int deadToLose;
 
 	private final float complexity;
 	private final float hiddenSheepChance;
@@ -42,11 +44,28 @@ public class Level {
 		this.wolfCount = wolfCount;
 		this.complexity = complexity;
 		
+		this.sheepToWin = (int) (sheepCount / (10f / complexity));
+		this.deadToLose = sheepCount - sheepToWin + 1;
+		
 		this.hiddenSheepChance = 0.1f * complexity;
 
 		this.engine = new Engine();
 
 		generateLevel(150f);
+	}
+	
+	public boolean checkLose(int sheepDead) {
+		if (sheepDead >= deadToLose)
+			return true;
+		
+		return false;
+	}
+	
+	public boolean checkWin(int sheepInPen) {
+		if (sheepInPen >= sheepToWin)
+			return true;
+		
+		return false;
 	}
 
 	private void generateLevel(float mapSize) {
