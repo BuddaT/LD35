@@ -69,13 +69,13 @@ public class LogicHandler {
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
-	// Speed at which evasion is attempted
-	private static final float EVASION_SPEED = 5;
+	// Speed at which evasion is attempted, units/sec
+	private static final float EVASION_SPEED = 30;
 
-	// Speed at which chasing is attempted
-	private static final float CHASE_SPEED = 5;
+	// Speed at which chasing is attempted, units/sec
+	private static final float CHASE_SPEED = 30;
 
-	private static final float MAX_SPEED = 2;
+	private static final float MAX_SPEED = 120;
 
 	// Default height above the "ground" at which to draw entities
 	private static final float DEFAULT_HEIGHT = 0;
@@ -92,14 +92,14 @@ public class LogicHandler {
 	static {
 		EnumMap<AttractorType, Float> speeds =
 				new EnumMap<AttractorType, Float>(AttractorType.class);
-		speeds.put(AttractorType.CROWDING, 0.5f);
-		speeds.put(AttractorType.COHESION, 0.05f);
+		speeds.put(AttractorType.CROWDING, 30f);
+		speeds.put(AttractorType.COHESION, 3f);
 		speeds.put(AttractorType.PLAYER, EVASION_SPEED);
 		speeds.put(AttractorType.PREY_PREDATOR, EVASION_SPEED);
 		speeds.put(AttractorType.PREDATOR_PREY, CHASE_SPEED);
 		for (AttractorType type : AttractorType.values()) {
 			if (speeds.get(type) == null) {
-				speeds.put(type, 0.05f);
+				speeds.put(type, 3f);
 			}
 		}
 		PREY_ATTRACTOR_SPEEDS = speeds;
@@ -152,6 +152,10 @@ public class LogicHandler {
 	 */
 	public List<Entity> getStaleModelEntities() {
 		return staleModelEntities;
+	}
+
+	private float getDelta() {
+		return Gdx.graphics.getDeltaTime();
 	}
 
 	/**
@@ -262,11 +266,11 @@ public class LogicHandler {
 			// Attempt to move away from the player
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
 			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
-				float speed = PLAYER_EFFECT_RANGE / (dist2ToPlayer * dist2ToPlayer);
+				float speed = 60 * PLAYER_EFFECT_RANGE / (dist2ToPlayer * dist2ToPlayer);
 				change = movementCalculator.awayFrom(posn, playerPosn).nor().scl(speed).clamp(0, EVASION_SPEED);
 				if (predator != null) {
 					// Moving away from the player overrides all else
-					prepareMovement(movement, change);
+					prepareMovement(movement, change.scl(getDelta()));
 					continue;
 				}
 			} else {
@@ -324,7 +328,8 @@ public class LogicHandler {
 				float speed = PREY_ATTRACTOR_SPEEDS.get(attractorType);
 				change.add(attractantChange.clamp(0, speed));
 			}
-			prepareMovement(movement, change);
+			// speed is per second, so scale according to seconds
+			prepareMovement(movement, change.scl(getDelta()));
 		}
 	}
 

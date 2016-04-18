@@ -10,7 +10,7 @@ public class FixedObjectRepulsor implements Attractor {
 		if (distance == 0) {
 			return Float.MIN_VALUE;
 		}
-		return -RANGE / (distance * distance);
+		return -60f * RANGE / (distance * distance);
 	}
 
 	@Override

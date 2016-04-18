@@ -14,11 +14,11 @@ public class PreyPredatorAttractor implements Attractor {
 	@Override
 	public float getBaseSpeed(float distance) {
 		if (distance <= RANGE_RUN) {
-			return 0.6f;
+			return 36f;
 		} else if (distance <= RANGE_TROT) {
-			return 0.2f;
+			return 12f;
 		} else {
-			return 0.05f;
+			return 3f;
 		}
 	}
 
