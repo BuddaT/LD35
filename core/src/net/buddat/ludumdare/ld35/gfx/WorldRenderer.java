@@ -91,8 +91,8 @@ public class WorldRenderer implements ProjectionTranslator {
 		currentLevel = new Level(10, 2, 1.0f);
 
 		instances.addAll(currentLevel.getCollisionModels());
-		instances.add(currentLevel.getSheepPenModel());
-		instances.addAll(currentLevel.getWolfTransformModels());
+		// instances.add(currentLevel.getSheepPenModel());
+		// instances.addAll(currentLevel.getWolfTransformModels());
 
 		GraphicsHandler.getLogicHandler().createCreatures(modelInstanceProvider);
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);

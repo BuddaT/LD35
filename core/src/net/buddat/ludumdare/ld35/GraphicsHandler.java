@@ -27,6 +27,7 @@ public class GraphicsHandler extends ApplicationAdapter {
 	public static final String MDL_FENCE1 = "woodFence.g3dj";
 	public static final String MDL_TREE1 = "treeOne.g3dj", MDL_TREE2 = "treeTwo.g3dj";
 	public static final String MDL_GRASS = "grassTest.g3dj";
+	public static final String MDL_ROCK1 = "rockOne.g3dj";
 
 	@Override
 	public void create() {
@@ -38,6 +39,7 @@ public class GraphicsHandler extends ApplicationAdapter {
 		assets.load(MDL_TREE1, Model.class);
 		assets.load(MDL_TREE2, Model.class);
 		assets.load(MDL_GRASS, Model.class);
+		assets.load(MDL_ROCK1, Model.class);
 
 		GraphicsHandler.getLogicHandler().init();
 

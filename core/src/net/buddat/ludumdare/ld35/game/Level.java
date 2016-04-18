@@ -134,7 +134,22 @@ public class Level {
 		float penLocX = 0;
 		float penLocZ = 0;
 		
-		String treeType = (MathUtils.randomBoolean(weight) ? GraphicsHandler.MDL_TREE1 : GraphicsHandler.MDL_TREE2);
+		String treeType = "";
+		float rotateAmnt = 0f;
+		switch (MathUtils.random(2)) {
+		case 0:
+			treeType = GraphicsHandler.MDL_TREE1;
+			rotateAmnt = 360f * MathUtils.random() - 180f;
+			break;
+		case 1:
+			treeType = GraphicsHandler.MDL_TREE2;
+			rotateAmnt = 360f * MathUtils.random() - 180f;
+			break;
+		case 2:
+			treeType = GraphicsHandler.MDL_ROCK1;
+			rotateAmnt = MathUtils.random(3) * 90f;
+			break;
+		}
 		
 		IntersectableModel treeInstance = ModelFactory.createCustomModel(treeType);
 		do {
@@ -157,11 +172,13 @@ public class Level {
 				for (IntersectableModel b : wolfMB)
 					if (treeInstance.intersects(b))
 						okay = false;
+				
+				if (treeInstance.intersects(GraphicsHandler.getGraphicsHandler().getWorldRenderer().getPlayerModel()))
+					okay = false;
 			}
 		} while (!okay);
 		
-		// addCollisionModel(newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(2f), 360f * MathUtils.random(), treeType));
-		addCollisionModel(newCollision(penLocX, 0f, penLocZ, 1f, 0f, treeType));
+		addCollisionModel(newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(1.5f), rotateAmnt, treeType));
 	}
 	
 	private void createWolfTransform(float mapSize) {
@@ -274,6 +291,8 @@ public class Level {
 	private void createBounds(float mapSize) {
 		mapModel = ModelFactory.createBoxModel(mapSize, 0.5f, mapSize, new Color(0.2f, 0.2f, 0.8f, 1f));
 		mapModel.transform.setTranslation(0, 0, 0);
+		
+		mapSize *= 1.1f;
 		
 		BoundingBox fenceB = ModelFactory.createCustomModel(GraphicsHandler.MDL_FENCE1).model
 				.calculateBoundingBox(new BoundingBox());
