@@ -11,6 +11,7 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -207,9 +208,15 @@ public class LogicHandler {
 		velocity.set(worldMousePosn).sub(position);
 
 		Array<IntersectableModel> collisionModels = getCurrentLevel().getCollisionModels();
+		IntersectableModel model = MODEL_MAPPER.get(player).model;
+		Vector3 lookDirection = new Vector3(velocity);
+		lookDirection.y = 0;
+		if (!lookDirection.nor().isZero()) {
+			model.transform.setToLookAt(lookDirection, UP.copy());
+		}
 		if (!collides(player, collisionModels)) {
 			position.set(worldMousePosn);
-			MODEL_MAPPER.get(player).model.updateCollisions();
+			model.updateCollisions();
 		}
 		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
 		calculateMovementChanges(engine, player, entities);
