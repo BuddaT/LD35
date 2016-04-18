@@ -460,7 +460,7 @@ public class LogicHandler {
 		}
 	};
 	
-	public class PredatorHidden implements Component {};
+	public static class PredatorHidden implements Component {};
 
-	public class Predator implements Component {};
+	public static class Predator implements Component {};
 }

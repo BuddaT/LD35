@@ -70,7 +70,7 @@ public class Level {
 			Entity sheepEntity = GraphicsHandler.getLogicHandler().createNewPrey(new Vector3(posX, 0f, posZ), new Vector3());
 			
 			if (MathUtils.randomBoolean(hiddenSheepChance))
-				sheepEntity.add(GraphicsHandler.getLogicHandler().new PredatorHidden());
+				sheepEntity.add(new LogicHandler.PredatorHidden());
 			
 			engine.addEntity(sheepEntity);
 		}
