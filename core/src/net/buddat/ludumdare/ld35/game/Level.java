@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Array;
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
 import net.buddat.ludumdare.ld35.LogicHandler.ModelComponent;
+import net.buddat.ludumdare.ld35.entity.FixedObjectRepulsor;
 import net.buddat.ludumdare.ld35.entity.Movement;
 import net.buddat.ludumdare.ld35.entity.Position;
 import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
@@ -316,6 +317,11 @@ public class Level {
 	private IntersectableModel createFence(float x, float z, float scale, float rotation, String modelFile) {
 		IntersectableModel model = newCollision(x, 0, z, scale, rotation, modelFile);
 		addCollisionModel(model);
+		engine.addEntity(new Entity()
+				.add(new FixedObjectRepulsor())
+				.add(new ModelComponent(model))
+				.add(new Position(new Vector3(x, 0, z), new Vector3())) // rotation unused
+		);
 		return model;
 	}
 

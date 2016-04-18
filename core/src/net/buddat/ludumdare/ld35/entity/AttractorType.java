@@ -11,5 +11,5 @@ public enum AttractorType {
 	// Predator-to-prey
 	PREDATOR_PREY,
 	PLAYER,
-	GENERAL
+	FIXED_OBSTACLE
 }

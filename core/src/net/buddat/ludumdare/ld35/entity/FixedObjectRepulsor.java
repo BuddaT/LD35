@@ -4,10 +4,13 @@ package net.buddat.ludumdare.ld35.entity;
  * Fixed object that repulses entities
  */
 public class FixedObjectRepulsor implements Attractor {
-	private static final float RANGE = 10*10;
+	private static final float RANGE = 15*15;
 	@Override
 	public float getBaseSpeed(float distance) {
-		return RANGE / (distance * distance);
+		if (distance == 0) {
+			return Float.MIN_VALUE;
+		}
+		return -RANGE / (distance * distance);
 	}
 
 	@Override
@@ -17,6 +20,6 @@ public class FixedObjectRepulsor implements Attractor {
 
 	@Override
 	public AttractorType getAttractorType() {
-		return AttractorType.GENERAL;
+		return AttractorType.FIXED_OBSTACLE;
 	}
 }
