@@ -363,6 +363,18 @@ public class LogicHandler {
 		return count;
 	}
 
+	public int getNumDead() {
+		ImmutableArray<Entity> entities = getCurrentLevel().getEngine().getEntitiesFor(prey);
+		int count = 0;
+		for (Entity entity : entities) {
+			Prey prey = PREY_MAPPER.get(entity);
+			if (prey.isDead()) {
+				count++;
+			}
+		}
+		return count;
+	}
+
 	/**
 	 * 	Creates models for each of the creatures, using the callback and assigning models to each creature
 	 */
