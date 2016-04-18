@@ -5,6 +5,7 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -23,6 +24,9 @@ public class UIRenderer {
 
 	private SpriteBatch batch;
 	private BitmapFont font;
+	
+	private Texture sHead, wHead;
+	
 	private final GlyphLayout layout = new GlyphLayout();
 	
 	private ShapeRenderer shapes;
@@ -41,6 +45,9 @@ public class UIRenderer {
 		
 		font = new BitmapFont(Gdx.files.internal("testFont.fnt"));
 		font.setColor(Color.WHITE);
+		
+		sHead = new Texture(Gdx.files.internal("sheepHead.png"));
+		wHead = new Texture(Gdx.files.internal("wolfHead.png"));
 	}
 
 	private static final int scale = 5, offset = 100;
@@ -143,8 +150,9 @@ public class UIRenderer {
 				font.draw(batch, "Click anywhere to go to the next level", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 200);
 				
 				if (w.firstLevel) {
-					layout.setText(font, "Beware the wolves in sheep's clothing");
-					font.draw(batch, "Beware the wolves in sheep's clothing", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
+					font.getData().setScale(1.5f);
+					layout.setText(font, "beware the wolves in sheep's clothing");
+					font.draw(batch, "beware the wolves in sheep's clothing", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 280);
 				}
 			batch.end();
 			
@@ -186,7 +194,27 @@ public class UIRenderer {
 			}
 		}
 		
-		
+		if (!w.pauseLogic) {
+			batch.begin();
+				batch.draw(sHead, 20, 70, 64, 64);
+				batch.draw(wHead, 20, 10, 64, 64);
+				
+				font.setColor(Color.WHITE);
+				font.getData().setScale(1.5f, 1.5f);
+				font.draw(batch, "" + (sheepCount - GraphicsHandler.getLogicHandler().getNumDead()), 90, 120);
+				font.draw(batch, "" + wolfCount, 90, 60);
+				
+				font.setColor(Color.GRAY);
+				font.getData().setScale(1f);
+				font.draw(batch, "Esc to Restart", screenWidth - 120, screenHeight - 20);
+			batch.end();
+			
+			if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
+				w.newLevel(false);
+				w.justStarted = true;
+				w.pauseLogic = true;
+			}
+		}
 	}
 
 	public void dispose() {
