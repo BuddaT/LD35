@@ -312,7 +312,13 @@ public class Level {
 					penLocZ + ((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
 		}
 	}
-	
+
+	private IntersectableModel createFence(float x, float z, float scale, float rotation, String modelFile) {
+		IntersectableModel model = newCollision(x, 0, z, scale, rotation, modelFile);
+		addCollisionModel(model);
+		return model;
+	}
+
 	private void createBounds(float mapSize) {
 		mapModel = ModelFactory.createBoxModel(mapSize, 0.5f, mapSize, new Color(0.2f, 0.2f, 0.8f, 1f));
 		mapModel.transform.setTranslation(0, 0, 0);
@@ -327,17 +333,17 @@ public class Level {
 		
 		for (int i = 0; i < penW; i++) {
 			// North Fence
-			addCollisionModel(newCollision(((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
-					0, -((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
+			createFence(((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f),
+					-((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1);
 			// South Fence
-			addCollisionModel(newCollision(((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 
-					0, ((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1));
+			createFence(((i - penW / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f),
+					((penH / 2f) * fenceB.getWidth()), 1.0f, 0f, GraphicsHandler.MDL_FENCE1);
 			// West Fence
-			addCollisionModel(newCollision(-((penW / 2f) * fenceB.getWidth()), 0, 
-					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+			createFence(-((penW / 2f) * fenceB.getWidth()),
+					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1);
 			// East Fence
-			addCollisionModel(newCollision(((penW / 2f) * fenceB.getWidth()), 0,
-					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1));
+			createFence(((penW / 2f) * fenceB.getWidth()),
+					((i - penH / 2f) * fenceB.getWidth()) + (fenceB.getWidth() / 2f), 1.0f, 90f, GraphicsHandler.MDL_FENCE1);
 		}
 	}
 }
