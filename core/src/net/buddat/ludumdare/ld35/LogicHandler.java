@@ -217,7 +217,8 @@ public class LogicHandler {
 
 		Array<IntersectableModel> collisionModels = getCurrentLevel().getCollisionModels();
 		IntersectableModel model = MODEL_MAPPER.get(player).model;
-		
+
+		// 90f because the model is wrong
 		model.transform.setToRotation(Vector3.Y, getRotationAngleTowards(position, worldMousePosn) + 90f);
 		
 		if (!collides(player, collisionModels)) {
@@ -374,13 +375,12 @@ public class LogicHandler {
 				continue;
 			}
 
+			Vector3 originalPosition = new Vector3(posn.position);
 			posn.position.add(movement.velocity);
-			Vector3 lookDirection = movementCalculator.calculateNewDirection(posn.rotation, movement.rotation);
-			if (lookDirection.isZero()) {
-				System.out.println("zero lookdirection from " + posn.rotation + ", " + movement.rotation);
-			}
-			posn.rotation = lookDirection;
-			model.transform.setToLookAt(lookDirection, up).setTranslation(posn.position);
+			// 90f because the models are wrong
+			model.transform.setToRotation(Vector3.Y,
+					getRotationAngleTowards(originalPosition, posn.position) + 90f);
+			model.transform.setTranslation(posn.position);
 			model.updateCollisions();
 			Prey prey = PREY_MAPPER.get(entity);
 			if (PREY_MAPPER.get(entity) != null) {
