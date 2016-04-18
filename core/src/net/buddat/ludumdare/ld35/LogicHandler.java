@@ -126,6 +126,10 @@ public class LogicHandler {
 
 	private ProjectionTranslator projectionTranslator;
 
+	public void assignPlayerModel(IntersectableModel model) {
+		getCurrentLevel().getPlayer().add(new ModelComponent(model));
+	}
+
 	/**
 	 * Creates a new creature basic position and movement attributes
 	 * @param position Creature position
@@ -186,17 +190,17 @@ public class LogicHandler {
 		
 		// Move the player towards the 3d position the mouse is pointing to?
 		Vector3 worldMousePosn = projectionTranslator.unproject(Gdx.input.getX(), Gdx.input.getY());
-		POSN_MAPPER.get(player).position.set(worldMousePosn);
+		Vector3 position = POSN_MAPPER.get(player).position;
+		Vector3 velocity = MVMNT_MAPPER.get(player).velocity;
+		velocity.set(worldMousePosn).sub(position);
+
+		Array<IntersectableModel> collisionModels = getCurrentLevel().getCollisionModels();
+		if (!collides(player, collisionModels)) {
+			position.set(worldMousePosn);
+		}
 		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
 		calculateMovementChanges(engine, player, entities);
 		applyMovementChanges(entities);
-		if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
-			StringBuilder builder = new StringBuilder();
-			for (Entity entity : engine.getEntitiesFor(creatures)) {
-				builder.append(POSN_MAPPER.get(entity).position).append(", ");
-			}
-			System.out.println(builder.toString());
-		}
 	}
 
 	/**
@@ -287,6 +291,26 @@ public class LogicHandler {
 		return new Vector2(vector3.x, vector3.z);
 	}
 
+	private boolean collides(Entity entity, Array<IntersectableModel> boxes) {
+		Position posn = POSN_MAPPER.get(entity);
+		Movement movement = MVMNT_MAPPER.get(entity);
+		// maybe we shouldn't be transforming it from within the logic
+		// but whatever. hack hack hack, hackity hack
+		IntersectableModel model = MODEL_MAPPER.get(entity).model;
+		Vector2 start = createXZVector(posn.position);
+		Vector2 end = new Vector2(start).add(createXZVector(movement.velocity));
+		for (IntersectableModel boxModel : boxes) {
+			if (boxModel == model) {
+				continue;
+			}
+
+			if (boxModel.lineIntersectsCollision(start, end)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Applies movement changes to positions IFF the entity is not moving into
 	 * the bounding box of another.
@@ -301,31 +325,16 @@ public class LogicHandler {
 		for (Entity entity : entities) {
 			Position posn = POSN_MAPPER.get(entity);
 			Movement movement = MVMNT_MAPPER.get(entity);
-			// maybe we shouldn't be transforming it from within the logic
-			// but whatever. hack hack hack, hackity hack
 			IntersectableModel model = MODEL_MAPPER.get(entity).model;
-			Vector2 start = createXZVector(posn.position);
-			Vector2 end = new Vector2(start).add(createXZVector(movement.velocity));
-			boolean collision = false;
-			for (IntersectableModel boxModel : boxes) {
-				if (boxModel == model) {
-					continue;
-				}
-				
-				if (boxModel.lineIntersectsCollision(start, end)) {
-					collision = true;
-					break;
-				}
-			}
 			// Don't change position if it results in a collision
-			if (collision) {
+			if (collides(entity, boxes)) {
 				continue;
 			}
 
 			posn.position.add(movement.velocity);
 			Vector3 lookDirection = movementCalculator.calculateNewDirection(posn.rotation, movement.rotation);
 			if (lookDirection.isZero()) {
-				System.out.println("zero lookdirection");
+				System.out.println("zero lookdirection from " + posn.rotation + ", " + movement.rotation);
 			}
 			posn.rotation = lookDirection;
 			model.transform.setToLookAt(lookDirection, up).setTranslation(posn.position);

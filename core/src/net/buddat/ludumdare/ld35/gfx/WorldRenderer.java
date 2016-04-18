@@ -77,7 +77,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
 		worldModelInstance = ModelFactory.createBoxModel(100f, 0.25f, 100f, Color.FOREST);
-		
+
 		playerModelInstance = ModelFactory.createCustomModel(GraphicsHandler.MDL_PLR);
 
 		AnimationController playerAnimation = new AnimationController(playerModelInstance);
@@ -88,7 +88,8 @@ public class WorldRenderer implements ProjectionTranslator {
 		instances.add(playerModelInstance);
 
 		currentLevel = new Level(10, 2, 1.0f);
-		
+		GraphicsHandler.getLogicHandler().assignPlayerModel(playerModelInstance);
+
 		instances.addAll(currentLevel.getCollisionModels());
 		instances.add(currentLevel.getSheepPenModel());
 		instances.addAll(currentLevel.getWolfTransformModels());
