@@ -105,17 +105,13 @@ public class LogicHandler {
 		@Override
 		public List<Attractor> getAttractorsFoundIn(Entity entity) {
 			List<Attractor> attractors = new ArrayList<Attractor>();
-			Prey prey = PREY_MAPPER.get(entity);
-			if (prey != null && !prey.isDead()) {
-				// only return attractors for live prey
-				for (Attractor attractor : new Attractor[]{
-						CROWDING_MAPPER.get(entity),
-						COHESION_MAPPER.get(entity),
-						PREDATOR_PREY_MAPPER.get(entity)
-				}) {
-					if (attractor != null) {
-						attractors.add(attractor);
-					}
+			for (Attractor attractor : new Attractor[]{
+					CROWDING_MAPPER.get(entity),
+					COHESION_MAPPER.get(entity),
+					PREDATOR_PREY_MAPPER.get(entity)
+			}) {
+				if (attractor != null) {
+					attractors.add(attractor);
 				}
 			}
 			return attractors;
@@ -254,14 +250,13 @@ public class LogicHandler {
 			Movement movement = MVMNT_MAPPER.get(entity);
 			Vector3 change;
 
-			boolean isPrey = entity.getComponent(Prey.class) != null;
-			boolean isPredator = entity.getComponent(Predator.class) != null;
+			Predator predator = entity.getComponent(Predator.class);
 			// Attempt to move away from the player
 			float dist2ToPlayer = posn.position.dst2(playerPosn.position);
 			if (dist2ToPlayer <= PLAYER_EFFECT_RANGE) {
 				float speed = PLAYER_EFFECT_RANGE / (dist2ToPlayer * dist2ToPlayer);
 				change = movementCalculator.awayFrom(posn, playerPosn).nor().scl(speed).clamp(0, EVASION_SPEED);
-				if (isPredator) {
+				if (predator != null) {
 					// Moving away from the player overrides all else
 					prepareMovement(movement, change);
 					continue;
@@ -423,8 +418,12 @@ public class LogicHandler {
 							GraphicsHandler.getGraphicsHandler().getWorldRenderer().getAnimController(preyModel).paused = true;
 						}
 						prey.kill();
-						
+						// dead prey can't move
 						potentialPrey.remove(Movement.class);
+						// dead prey has no flock or predator attractors
+						potentialPrey.remove(CrowdingRepulsor.class);
+						potentialPrey.remove(CohesionAttractor.class);
+						potentialPrey.remove(PreyPredatorAttractor.class);
 					}
 				}
 			}
