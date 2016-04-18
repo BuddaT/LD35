@@ -33,6 +33,7 @@ import net.buddat.ludumdare.ld35.math.MovementCalculator;
 public class LogicHandler {
 	private static final int NUM_CREATURES = 5;
 	private Family creatures;
+	private Family prey;
 	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
 	private static final ComponentMapper<Movement> MVMNT_MAPPER =
@@ -50,6 +51,8 @@ public class LogicHandler {
 	// Lists what the entity is attracted to
 	private static final ComponentMapper<AttractedByLister> ATTRACTED_BY_MAPPER =
 			ComponentMapper.getFor(AttractedByLister.class);
+	private static final ComponentMapper<Prey> PREY_MAPPER =
+			ComponentMapper.getFor(Prey.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
@@ -178,6 +181,7 @@ public class LogicHandler {
 
 	public void init() {
 		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
+		prey = Family.all(Prey.class).exclude(Mouseable.class).get();
 	}
 
 	private Level getCurrentLevel() {
@@ -338,7 +342,25 @@ public class LogicHandler {
 			posn.rotation = lookDirection;
 			model.transform.setToLookAt(lookDirection, up).setTranslation(posn.position);
 			model.updateCollisions();
+			Prey prey = PREY_MAPPER.get(entity);
+			if (PREY_MAPPER.get(entity) != null) {
+				if (getCurrentLevel().getSheepPenModel().contains(model)) {
+					prey.setPenned(true);
+				}
+			}
 		}
+	}
+
+	public int getNumPenned() {
+		ImmutableArray<Entity> entities = getCurrentLevel().getEngine().getEntitiesFor(prey);
+		int count = 0;
+		for (Entity entity : entities) {
+			Prey prey = PREY_MAPPER.get(entity);
+			if (!prey.isDead() && prey.isPenned()) {
+				count++;
+			}
+		}
+		return count;
 	}
 
 	/**
@@ -405,7 +427,26 @@ public class LogicHandler {
 		}
 	}
 
-	public class Prey implements Component {};
+	public class Prey implements Component {
+		private boolean penned = false;
+		private boolean dead;
+
+		public void setPenned(boolean penned) {
+			this.penned = penned;
+		}
+
+		public void kill() {
+			this.dead = true;
+		}
+
+		public boolean isPenned() {
+			return penned;
+		}
+
+		public boolean isDead() {
+			return dead;
+		}
+	};
 	
 	public class PredatorHidden implements Component {};
 
