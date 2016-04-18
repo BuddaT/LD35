@@ -3,7 +3,7 @@ package net.buddat.ludumdare.ld35.entity;
 /**
  * Attraction of predators to prey.
  */
-public class PreyPredatorAttractor implements FlockAttractor {
+public class PreyPredatorAttractor implements Attractor {
 	// Distance from predator to prey (^ 2 to avoid sqrt)
 	private static final float MAX_RANGE = 50*50;
 	// Will trot within this distance
