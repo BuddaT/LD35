@@ -446,8 +446,10 @@ public class LogicHandler {
 							preyModel.transform.translate(0f, 1f, 0f).rotate(Vector3.X, 90).translate(0f, -1f, 0f);
 							GraphicsHandler.getGraphicsHandler().getWorldRenderer().getAnimController(preyModel).paused = true;
 							
-							GraphicsHandler.getGraphicsHandler().getWorldRenderer().wolfHowl.play();
-							GraphicsHandler.getGraphicsHandler().getWorldRenderer().killSound.play(0.5f);
+							if (!GraphicsHandler.getGraphicsHandler().getWorldRenderer().mute) {
+								GraphicsHandler.getGraphicsHandler().getWorldRenderer().wolfHowl.play(0.75f);
+								GraphicsHandler.getGraphicsHandler().getWorldRenderer().killSound.play(0.25f);
+							}
 						}
 						prey.kill();
 						// dead prey can't move

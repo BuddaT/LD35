@@ -147,12 +147,13 @@ public class UIRenderer {
 				font.setColor(Color.WHITE);
 				font.getData().setScale(2.5f, 1.5f);
 				layout.setText(font, "Click anywhere to go to the next level");
-				font.draw(batch, "Click anywhere to go to the next level", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 200);
+				font.draw(batch, "Click anywhere to go to the next level", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 150);
 				
 				if (w.firstLevel) {
+					font.setColor(Color.ORANGE);
 					font.getData().setScale(1.5f);
 					layout.setText(font, "beware the wolves in sheep's clothing");
-					font.draw(batch, "beware the wolves in sheep's clothing", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 280);
+					font.draw(batch, "beware the wolves in sheep's clothing", screenWidth / 2 - layout.width / 2, 70);
 				}
 			batch.end();
 			
@@ -204,6 +205,12 @@ public class UIRenderer {
 				font.draw(batch, "" + (sheepCount - GraphicsHandler.getLogicHandler().getNumDead() - w.getCurrentLevel().transformCount), 90, 120);
 				font.draw(batch, "" + wolfCount, 90, 60);
 				
+				font.setColor(Color.ORANGE);
+				font.getData().setScale(1f);
+				layout.setText(font, "Sheep Needed: " + (w.getCurrentLevel().sheepToWin - GraphicsHandler.getLogicHandler().getNumPenned()));
+				font.draw(batch, "Sheep Needed: " + (w.getCurrentLevel().sheepToWin - GraphicsHandler.getLogicHandler().getNumPenned()), 
+						screenWidth - layout.width - 20, 50);
+				
 				font.setColor(Color.GRAY);
 				font.getData().setScale(1f);
 				font.draw(batch, "Esc to Restart", screenWidth - 120, screenHeight - 20);
@@ -214,6 +221,21 @@ public class UIRenderer {
 				w.justStarted = true;
 				w.pauseLogic = true;
 			}
+		}
+		
+		batch.begin();
+			font.setColor(Color.GRAY);
+			font.getData().setScale(1f);
+			font.draw(batch, "M to Mute", screenWidth - 105, screenHeight - 60);
+		batch.end();
+		
+		if (Gdx.input.isKeyPressed(Input.Keys.M)) {
+			w.mute = !w.mute;
+			
+			if (w.mute) 
+				w.sheepAmbientSnd.pause();
+			else 
+				w.sheepAmbientSnd.play();
 		}
 	}
 

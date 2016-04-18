@@ -63,6 +63,8 @@ public class WorldRenderer implements ProjectionTranslator {
 	
 	private static final long SND_MIN_DELTA = 5000;
 	private long lastSndPlayed = 0;
+	
+	public boolean mute = false;
 
 	public WorldRenderer() {
 
@@ -221,7 +223,7 @@ public class WorldRenderer implements ProjectionTranslator {
 			levelLost = true;
 		}
 		
-		if (System.currentTimeMillis() - lastSndPlayed > SND_MIN_DELTA) {
+		if (!mute && System.currentTimeMillis() - lastSndPlayed > SND_MIN_DELTA) {
 			lastSndPlayed = System.currentTimeMillis();
 			
 			switch(MathUtils.random(4)) {
