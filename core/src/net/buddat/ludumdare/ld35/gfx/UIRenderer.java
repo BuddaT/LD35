@@ -179,8 +179,8 @@ public class UIRenderer {
 						screenWidth / 2 - layout.width / 2, screenHeight / 2);
 				
 				font.setColor(Color.RED);
-				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().deadToLose);
-				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().deadToLose, 
+				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + (w.getCurrentLevel().deadToLose - w.getCurrentLevel().transformCount));
+				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + (w.getCurrentLevel().deadToLose - w.getCurrentLevel().transformCount), 
 						screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
 				
 				font.setColor(Color.WHITE);
