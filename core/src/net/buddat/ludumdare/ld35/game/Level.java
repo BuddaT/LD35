@@ -4,6 +4,7 @@ import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
@@ -85,6 +86,11 @@ public class Level {
 		for (int i = 0; i < sheepCount; i++) {
 			float posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
 			float posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			
+			while(sheepPenModel.lineIntersectsCollision(new Vector2(posX, posZ), new Vector2(posX, posZ))) {
+				posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			}
 			
 			Entity sheepEntity = GraphicsHandler.getLogicHandler().createNewPrey(new Vector3(posX, 0f, posZ), new Vector3());
 			

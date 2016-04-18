@@ -2,6 +2,7 @@ package net.buddat.ludumdare.ld35.gfx;
 
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -31,7 +32,7 @@ public class UIRenderer {
 		batch = new SpriteBatch();
 		shapes = new ShapeRenderer();
 		
-		font = new BitmapFont();
+		font = new BitmapFont(Gdx.files.internal("testFont.fnt"));
 		font.setColor(Color.WHITE);
 	}
 
