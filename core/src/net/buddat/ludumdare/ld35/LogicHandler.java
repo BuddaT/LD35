@@ -11,11 +11,22 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-import net.buddat.ludumdare.ld35.entity.*;
+import net.buddat.ludumdare.ld35.entity.AttractorType;
+import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
+import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
+import net.buddat.ludumdare.ld35.entity.FlockAttractor;
+import net.buddat.ludumdare.ld35.entity.Movement;
+import net.buddat.ludumdare.ld35.entity.Position;
+import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
+import net.buddat.ludumdare.ld35.entity.Prey;
+import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
+import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 import net.buddat.ludumdare.ld35.game.Level;
 import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
@@ -131,7 +142,7 @@ public class LogicHandler {
 
 	private ProjectionTranslator projectionTranslator;
 
-	private ArrayList<Entity> staleModelEntities = new ArrayList<Entity>();
+	private final ArrayList<Entity> staleModelEntities = new ArrayList<Entity>();
 
 	/**
 	 * @return All entities with stale models
@@ -375,6 +386,12 @@ public class LogicHandler {
 							}
 						}
 					}
+					
+					if (prey.isPenned()) {
+						model.materials.get(1).set(ColorAttribute.createDiffuse(Color.GREEN));
+					} else {
+						model.materials.get(1).set(ColorAttribute.createDiffuse(Color.WHITE));
+					}
 				}
 			}
 			Predator predator = PREDATOR_MAPPER.get(entity);
@@ -389,7 +406,13 @@ public class LogicHandler {
 					}
 					IntersectableModel preyModel = MODEL_MAPPER.get(potentialPrey).model;
 					if (preyModel.intersects(model)) {
+						if (!prey.isDead()) {
+							preyModel.materials.get(1).set(ColorAttribute.createDiffuse(Color.RED));
+							preyModel.transform.translate(0f, 1f, 0f).rotate(Vector3.X, 90).translate(0f, -1f, 0f);
+							GraphicsHandler.getGraphicsHandler().getWorldRenderer().getAnimController(preyModel).paused = true;
+						}
 						prey.kill();
+						
 						potentialPrey.remove(Movement.class);
 					}
 				}

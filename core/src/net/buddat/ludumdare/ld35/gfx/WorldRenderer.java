@@ -1,7 +1,6 @@
 package net.buddat.ludumdare.ld35.gfx;
 
 import java.util.HashMap;
-import java.util.List;
 
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.Gdx;
@@ -29,7 +28,7 @@ import net.buddat.ludumdare.ld35.game.Level;
 
 public class WorldRenderer implements ProjectionTranslator {
 
-	private static final float SUN_MOVEMENT_SPEED = 0.001f;
+	private static final float SUN_MOVEMENT_SPEED = 0.005f;
 	private static final float CAMERA_HEIGHT = 45f;
 
 	private Environment worldEnvironment;
@@ -95,8 +94,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		instances.add(currentLevel.getSheepPenModel());
 		instances.addAll(currentLevel.getWolfTransformModels());
 
-		GraphicsHandler.getLogicHandler().createCreatures(
-				modelInstanceProvider);
+		GraphicsHandler.getLogicHandler().createCreatures(modelInstanceProvider);
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
 	}
 
@@ -210,6 +208,10 @@ public class WorldRenderer implements ProjectionTranslator {
 	
 	public IntersectableModel getPlayerModel() {
 		return playerModelInstance;
+	}
+	
+	public AnimationController getAnimController(ModelInstance model) {
+		return animations.get(model);
 	}
 
 	@Override

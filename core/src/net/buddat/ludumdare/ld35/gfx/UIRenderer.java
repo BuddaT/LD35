@@ -65,10 +65,14 @@ public class UIRenderer {
 		}
 		
 		for (Entity ent : e.getEntities()) {
-			if (ent.getComponent(Prey.class) != null)
-				sheepCount++;
-			if (ent.getComponent(LogicHandler.PredatorHidden.class) != null)
-				hiddenSheepCount++;
+			if (ent.getComponent(Prey.class) != null) {
+				if (!ent.getComponent(Prey.class).isDead())
+					sheepCount++;
+			}
+			if (ent.getComponent(LogicHandler.PredatorHidden.class) != null) {
+				if (!ent.getComponent(Prey.class).isDead())
+					hiddenSheepCount++;
+			}
 			if (ent.getComponent(LogicHandler.Predator.class) != null)
 				wolfCount++;
 		}
