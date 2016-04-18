@@ -19,20 +19,20 @@ public class ModelFactory {
 		Model model = modelBuilder.createBox(sizeX, sizeY, sizeZ, new Material(ColorAttribute.createDiffuse(c)),
 				Usage.Position | Usage.Normal);
 
-		return new IntersectableModel(model);
+		return new IntersectableModel("box", model);
 	}
 
 	public static IntersectableModel createSphereModel(float sizeX, float sizeY, float sizeZ, Color c, int divisions) {
 		Model model = modelBuilder.createSphere(sizeX, sizeY, sizeZ, divisions, divisions,
 				new Material(ColorAttribute.createDiffuse(c)), Usage.Position | Usage.Normal);
 
-		return new IntersectableModel(model);
+		return new IntersectableModel("sphere", model);
 	}
 
 	public static IntersectableModel createCustomModel(String modelFile) {
 		Model model = GraphicsHandler.getGraphicsHandler().getAssets().get(modelFile, Model.class);
 
-		return new IntersectableModel(model);
+		return new IntersectableModel(modelFile, model);
 	}
 	
 	public static boolean intersectsWith(BoundingBox boundingBox1, BoundingBox boundingBox2) {

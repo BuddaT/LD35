@@ -10,13 +10,16 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class IntersectableModel extends ModelInstance {
-	
+
+	// debugging
+	private final String name;
 	private BoundingBox bounds = new BoundingBox();
 	
 	public Polygon collision;
-	
-	public IntersectableModel(Model model) {
+
+	public IntersectableModel(String name, Model model) {
 		super(model);
+		this.name = name;
 		
 		bounds = calculateBoundingBox(bounds);
 		collision = new Polygon(new float[] {
