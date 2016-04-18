@@ -93,11 +93,11 @@ public class WorldRenderer implements ProjectionTranslator {
 		worldEnvironment = new Environment();
 		worldEnvironment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1f));
 		
-		sunLight = new DirectionalLight().set(0.6f, 0.6f, 0.6f, -1f, -0.4f, -1f);
+		sunLight = new DirectionalLight().set(0.4f, 0.4f, 0.4f, -1f, -0.4f, -1f);
 		worldEnvironment.add(sunLight);
 
 		shadowLight = new DirectionalShadowLight(1024, 1024, 120f, 120f, 1f, 1000f);
-		shadowLight.set(0.6f, 0.6f, 0.6f, -1f, -0.4f, -1f);
+		shadowLight.set(0.4f, 0.4f, 0.4f, -1f, -0.4f, -1f);
 		worldEnvironment.add(shadowLight);
 		worldEnvironment.shadowMap = shadowLight;
 

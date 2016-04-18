@@ -81,17 +81,36 @@ public class Level {
 
 		createBounds(mapSize);
 		
-		createSheepPen(mapSize, (int) (SHEEP_PEN_W * complexity), (int) (SHEEP_PEN_H * complexity));
+		int penSize = (int) (SHEEP_PEN_W + MathUtils.random(complexity));
+		createSheepPen(mapSize, penSize, penSize);
 		createWolfTransform(mapSize);
 		
+		for (int i = 0; i < mapSize / (10f / complexity); i++) {
+			createTree(mapSize, 0.5f);
+		}
+		
+		boolean fine;
+		Vector2 testVec = new Vector2();
 		for (int i = 0; i < sheepCount; i++) {
-			float posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
-			float posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+			float posX;
+			float posZ;
 			
-			while(sheepPenModel.lineIntersectsCollision(new Vector2(posX, posZ), new Vector2(posX, posZ))) {
-				posX = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
-				posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
-			}
+			do {
+				fine = true;
+				
+				testVec.x = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				testVec.y = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
+				
+				if (sheepPenModel.lineIntersectsCollision(testVec, testVec))
+					fine = false;
+				for (IntersectableModel m : collisions) {
+					if (m.lineIntersectsCollision(testVec, testVec))
+						fine = false;
+				}
+			} while (!fine);
+			
+			posX = testVec.x;
+			posZ = testVec.y;
 			
 			Entity sheepEntity = GraphicsHandler.getLogicHandler().createNewPrey(new Vector3(posX, 0f, posZ), new Vector3());
 			
@@ -106,10 +125,6 @@ public class Level {
 			float posZ = ((mapSize / 2) * -1) + (MathUtils.random() * mapSize);
 			
 			engine.addEntity(GraphicsHandler.getLogicHandler().createNewPredator(new Vector3(posX, 0f, posZ), new Vector3()));
-		}
-		
-		for (int i = 0; i < mapSize / (10f / complexity); i++) {
-			createTree(mapSize, 0.5f);
 		}
 	}
 
@@ -246,12 +261,12 @@ public class Level {
 		boolean firstDir = false;
 		if (penLocZ < 0) {
 			if (penLocX < 0) {
-				if (penLocZ < penLocX) {
+				if (penLocZ <= penLocX) {
 					x = true;
 					firstDir = true;
 				}
 			} else {
-				if (penLocZ * -1 > penLocX) {
+				if (penLocZ * -1 >= penLocX) {
 					x = true;
 					firstDir = true;
 				} else {
@@ -260,11 +275,11 @@ public class Level {
 			}
 		} else {
 			if (penLocX < 0) {
-				if (penLocZ * -1 < penLocX) {
+				if (penLocZ * -1 <= penLocX) {
 					x = true;
 				}
 			} else {
-				if (penLocZ > penLocX) {
+				if (penLocZ >= penLocX) {
 					x = true;
 				} else {
 					firstDir = true;
