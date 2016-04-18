@@ -14,7 +14,7 @@ import net.buddat.ludumdare.ld35.LogicHandler;
 
 public class UIRenderer {
 	
-	private static final boolean DEBUG_DRAW_COLLISIONS = true;
+	private static final boolean DEBUG_DRAW_COLLISIONS = false;
 
 	private SpriteBatch batch;
 	private BitmapFont font;
@@ -76,6 +76,8 @@ public class UIRenderer {
 		font.draw(batch, "Sheep Count: " + sheepCount, 20, 140);
 		font.draw(batch, "Hidden Wolf Count: " + hiddenSheepCount, 20, 100);
 		font.draw(batch, "Wolf Count: " + wolfCount, 20, 60);
+		font.draw(batch, "Pen Count: " + GraphicsHandler.getLogicHandler().getNumPenned(), 20, 180);
+		font.draw(batch, "Dead Count: " + GraphicsHandler.getLogicHandler().getNumDead(), 20, 220);
 		batch.end();
 	}
 
