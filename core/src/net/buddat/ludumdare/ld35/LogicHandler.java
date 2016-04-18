@@ -205,6 +205,13 @@ public class LogicHandler {
 	private Level getCurrentLevel() {
 		return GraphicsHandler.getGraphicsHandler().getWorldRenderer().getCurrentLevel();
 	}
+	
+	public float getRotationAngleTowards(Vector3 from, Vector3 to) {
+		double dir = Math.atan2(from.x - to.x, from.z - to.z);
+		dir = dir * (180 / Math.PI);
+		
+		return (float) dir;
+	}
 
 	public void update() {
 		staleModelEntities.clear();
@@ -219,11 +226,9 @@ public class LogicHandler {
 
 		Array<IntersectableModel> collisionModels = getCurrentLevel().getCollisionModels();
 		IntersectableModel model = MODEL_MAPPER.get(player).model;
-		Vector3 lookDirection = new Vector3(velocity);
-		lookDirection.y = 0;
-		if (!lookDirection.nor().isZero()) {
-			model.transform.setToLookAt(lookDirection, UP.copy());
-		}
+		
+		model.transform.setToRotation(Vector3.Y, getRotationAngleTowards(position, worldMousePosn) + 90f);
+		
 		if (!collides(player, collisionModels)) {
 			position.set(worldMousePosn);
 			model.updateCollisions();
