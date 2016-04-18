@@ -11,7 +11,6 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.utils.ImmutableArray;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -93,12 +92,12 @@ public class LogicHandler {
 	 */
 	private static final AttractedByLister PREY_ATTRACTORS_LISTER = new AttractedByLister(new AttractorProvider() {
 		@Override
-		public List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
-			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
+		public List<Attractor> getAttractorsFoundIn(Entity entity) {
+			List<Attractor> attractors = new ArrayList<Attractor>();
 			Prey prey = PREY_MAPPER.get(entity);
 			if (prey != null && !prey.isDead()) {
 				// only return attractors for live prey
-				for (FlockAttractor attractor : new FlockAttractor[]{
+				for (Attractor attractor : new Attractor[]{
 						CROWDING_MAPPER.get(entity),
 						COHESION_MAPPER.get(entity),
 						PREDATOR_PREY_MAPPER.get(entity)
@@ -117,8 +116,8 @@ public class LogicHandler {
 	 */
 	private static final AttractedByLister PREDATOR_ATTRACTORS_LISTER = new AttractedByLister(new AttractorProvider() {
 		@Override
-		public List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
-			List<FlockAttractor> attractors = new ArrayList<FlockAttractor>();
+		public List<Attractor> getAttractorsFoundIn(Entity entity) {
+			List<Attractor> attractors = new ArrayList<Attractor>();
 			Prey prey = PREY_MAPPER.get(entity);
 			if (prey != null && !prey.isDead()) {
 				PreyPredatorAttractor attractor = PREY_PREDATOR_MAPPER.get(entity);
@@ -273,7 +272,7 @@ public class LogicHandler {
 				Position otherPosn = POSN_MAPPER.get(other);
 				float distance = posn.position.dst2(otherPosn.position);
 				// List all interesting attractors on the other entity
-				for (FlockAttractor attractor : lister.getAttractorsFoundIn(other)) {
+				for (Attractor attractor : lister.getAttractorsFoundIn(other)) {
 
 					if (distance <= attractor.getMaxRange()) {
 						float speed = attractor.getBaseSpeed(distance);
@@ -467,7 +466,7 @@ public class LogicHandler {
 	}
 
 	private interface AttractorProvider {
-		List<FlockAttractor> getAttractorsFoundIn(Entity entity);
+		List<Attractor> getAttractorsFoundIn(Entity entity);
 	}
 
 	/**
@@ -487,7 +486,7 @@ public class LogicHandler {
 		 * @param entity Entity on which interesting attractors are listed
 		 * @return List of attractors
 		 */
-		List<FlockAttractor> getAttractorsFoundIn(Entity entity) {
+		List<Attractor> getAttractorsFoundIn(Entity entity) {
 			return provider.getAttractorsFoundIn(entity);
 		}
 	}
