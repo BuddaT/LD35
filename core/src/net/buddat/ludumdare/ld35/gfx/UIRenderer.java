@@ -3,8 +3,10 @@ package net.buddat.ludumdare.ld35.gfx;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
@@ -17,12 +19,17 @@ import net.buddat.ludumdare.ld35.entity.Prey;
 public class UIRenderer {
 	
 	private static final boolean DEBUG_DRAW_COLLISIONS = false;
-	private static final boolean DEBUG_DRAW_ENTITYINFO = true;
+	private static final boolean DEBUG_DRAW_ENTITYINFO = false;
 
 	private SpriteBatch batch;
 	private BitmapFont font;
+	private final GlyphLayout layout = new GlyphLayout();
 	
 	private ShapeRenderer shapes;
+	
+	private final String instructions = "Herd your sheep back into their pen " +
+						"while avoiding the pesky wolves. Chase them away to " +
+						"keep your sheep alive.";
 	
 	public UIRenderer() {
 
@@ -41,6 +48,9 @@ public class UIRenderer {
 		WorldRenderer w = GraphicsHandler.getGraphicsHandler().getWorldRenderer();
 		LogicHandler l = GraphicsHandler.getLogicHandler();
 		Engine e = w.getCurrentLevel().getEngine();
+		
+		final int screenWidth = Gdx.graphics.getWidth();
+		final int screenHeight = Gdx.graphics.getHeight();
 		
 		int sheepCount = w.getCurrentLevel().sheepCount;
 		int wolfCount = 0, hiddenSheepCount = 0;
@@ -86,6 +96,86 @@ public class UIRenderer {
 			font.draw(batch, "Pen Count: " + GraphicsHandler.getLogicHandler().getNumPenned(), 20, 180);
 			font.draw(batch, "Dead Count: " + GraphicsHandler.getLogicHandler().getNumDead(), 20, 220);
 			batch.end();
+		}
+		
+		if (w.justStarted) {
+			batch.begin();
+				font.setColor(Color.WHITE);
+				
+				font.getData().setScale(4f, 3f);
+				layout.setText(font, "Sheep Shift");
+				font.draw(batch, "Sheep Shift", screenWidth / 2 - layout.width / 2, screenHeight / 2 + 200);
+				
+				font.getData().setScale(1.5f, 1f);
+				font.draw(batch, instructions, screenWidth / 4, screenHeight / 2, screenWidth / 2, 1, true);
+				
+				font.getData().setScale(2.5f, 1.5f);
+				layout.setText(font, "Click anywhere to begin");
+				font.draw(batch, "Click anywhere to begin", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 200);
+			batch.end();
+			
+			if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+				w.justStarted = false;
+				w.pauseLogic = false;
+			}
+		}
+		
+		if (w.levelWon) {
+			batch.begin();
+				font.setColor(Color.GREEN);
+				font.getData().setScale(4f, 3f);
+				layout.setText(font, "Level Completed!");
+				font.draw(batch, "Level Completed!", screenWidth / 2 - layout.width / 2, screenHeight / 2 + 200);
+				
+				font.getData().setScale(1.5f, 1f);
+				layout.setText(font, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount);
+				font.draw(batch, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount, 
+						screenWidth / 2 - layout.width / 2, screenHeight / 2);
+				
+				font.setColor(Color.RED);
+				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount);
+				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount, 
+						screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
+				
+				font.setColor(Color.WHITE);
+				font.getData().setScale(2.5f, 1.5f);
+				layout.setText(font, "Click anywhere to go to the next level");
+				font.draw(batch, "Click anywhere to go to the next level", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 200);
+			batch.end();
+			
+			if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+				w.newLevel(true);
+				w.pauseLogic = false;
+			}
+		}
+		
+		if (w.levelLost) {
+			batch.begin();
+				font.setColor(Color.RED);
+				font.getData().setScale(4f, 3f);
+				layout.setText(font, "Level Lost!");
+				font.draw(batch, "Level Lost!", screenWidth / 2 - layout.width / 2, screenHeight / 2 + 200);
+				
+				font.getData().setScale(1.5f, 1f);
+				layout.setText(font, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount);
+				font.draw(batch, "Sheep Saved: " + GraphicsHandler.getLogicHandler().getNumPenned() + " / " + w.getCurrentLevel().sheepCount, 
+						screenWidth / 2 - layout.width / 2, screenHeight / 2);
+				
+				font.setColor(Color.RED);
+				layout.setText(font, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount);
+				font.draw(batch, "Sheep Lost: " + GraphicsHandler.getLogicHandler().getNumDead() + " / " + w.getCurrentLevel().sheepCount, 
+						screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
+				
+				font.setColor(Color.WHITE);
+				font.getData().setScale(2.5f, 1.5f);
+				layout.setText(font, "Click anywhere to start again");
+				font.draw(batch, "Click anywhere to start again", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 200);
+			batch.end();
+			
+			if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+				w.newLevel(false);
+				w.justStarted = true;
+			}
 		}
 	}
 

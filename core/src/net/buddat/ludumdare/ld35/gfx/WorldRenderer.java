@@ -51,12 +51,35 @@ public class WorldRenderer implements ProjectionTranslator {
 
 	private Level currentLevel;
 	
-	public boolean pauseLogic = false;
+	public boolean pauseLogic = true;
 	public boolean levelWon = false;
 	public boolean levelLost = false;
+	
+	public boolean justStarted = true;
 
 	public WorldRenderer() {
 
+	}
+	
+	public void newLevel(boolean increaseDifficulty) {
+		levelWon = false;
+		levelLost = false;
+		instances.clear();
+		
+		playerModelInstance.transform.setToTranslation(0f, 0f, 0f);
+		playerModelInstance.updateCollisions();
+		
+		instances.add(worldModelInstance);
+		instances.add(playerModelInstance);
+		
+		if (increaseDifficulty) {
+			currentLevel = new Level((int) (currentLevel.sheepCount * 1.5f), (int) (currentLevel.wolfCount * 1.5f), currentLevel.complexity * 1.5f);
+		} else {
+			currentLevel = new Level(10, 2, 1.0f);
+		}
+		
+		instances.addAll(currentLevel.getCollisionModels());
+		GraphicsHandler.getLogicHandler().createCreatures(modelInstanceProvider);
 	}
 
 	public void create() {
@@ -232,4 +255,5 @@ public class WorldRenderer implements ProjectionTranslator {
 		worldPosition.y = 0;
 		return worldPosition;
 	}
+
 }

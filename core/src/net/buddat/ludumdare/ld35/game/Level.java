@@ -22,11 +22,11 @@ public class Level {
 	private static final int SHEEP_PEN_W = 3, SHEEP_PEN_H = 3;
 
 	public final int sheepCount;
-	private final int wolfCount;
+	public final int wolfCount;
 	private final int sheepToWin;
 	private final int deadToLose;
 
-	private final float complexity;
+	public final float complexity;
 	private final float hiddenSheepChance;
 
 	private final Array<IntersectableModel> collisions = new Array<IntersectableModel>();
@@ -45,14 +45,14 @@ public class Level {
 		this.wolfCount = wolfCount;
 		this.complexity = complexity;
 		
-		this.sheepToWin = (int) (sheepCount / (10f / complexity));
+		this.sheepToWin = (int) (sheepCount / (5f / complexity));
 		this.deadToLose = sheepCount - sheepToWin + 1;
 		
 		this.hiddenSheepChance = 0.1f * complexity;
 
 		this.engine = new Engine();
 
-		generateLevel(150f);
+		generateLevel(100f * complexity);
 	}
 	
 	public boolean checkLose(int sheepDead) {
@@ -80,7 +80,7 @@ public class Level {
 
 		createBounds(mapSize);
 		
-		createSheepPen(mapSize, SHEEP_PEN_W, SHEEP_PEN_H);
+		createSheepPen(mapSize, (int) (SHEEP_PEN_W * complexity), (int) (SHEEP_PEN_H * complexity));
 		createWolfTransform(mapSize);
 		
 		for (int i = 0; i < sheepCount; i++) {
