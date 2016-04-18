@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.Array;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
+import net.buddat.ludumdare.ld35.LogicHandler.ModelComponent;
 import net.buddat.ludumdare.ld35.entity.Movement;
 import net.buddat.ludumdare.ld35.entity.Position;
 import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
@@ -53,6 +54,7 @@ public class Level {
 		player.add(new Position(new Vector3(), new Vector3()));
 		player.add(new Movement(new Vector3(), new Vector3()));
 		player.add(new LogicHandler.Mouseable());
+		player.add(new ModelComponent(GraphicsHandler.getGraphicsHandler().getWorldRenderer().getPlayerModel()));
 
 		engine.addEntity(player);
 
@@ -95,6 +97,9 @@ public class Level {
 	public void addCollisionModel(IntersectableModel c) {
 		if (collisions.contains(c, false))
 			return;
+		
+		if (c.intersects(player.getComponent(LogicHandler.ModelComponent.class).model))
+			System.out.println("BORK");
 
 		collisions.add(c);
 	}
