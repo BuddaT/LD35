@@ -96,6 +96,7 @@ public class LogicHandler {
 		speeds.put(AttractorType.COHESION, 3f);
 		speeds.put(AttractorType.PLAYER, EVASION_SPEED);
 		speeds.put(AttractorType.PREY_PREDATOR, EVASION_SPEED);
+		speeds.put(AttractorType.HIDDEN_PREDATOR, 30f);
 		speeds.put(AttractorType.PREDATOR_PREY, CHASE_SPEED);
 		for (AttractorType type : AttractorType.values()) {
 			if (speeds.get(type) == null) {
@@ -342,7 +343,7 @@ public class LogicHandler {
 		change.clamp(0, MAX_SPEED);
 		// any y values for now are set to default height
 		change.y = DEFAULT_HEIGHT;
-		// velocity changes to the average between the desired and current. This doesn't work as intended yet
+		// velocity changes to the average between the desired and current. Does this work? Idk
 		movement.velocity.add(change).scl(0.5f);
 		movement.rotation.set(change).nor();
 	}
@@ -401,6 +402,24 @@ public class LogicHandler {
 			if (PREY_MAPPER.get(entity) != null) {
 				if (!prey.isDead()) {
 					prey.setPenned(getCurrentLevel().getSheepPenModel().contains(model));
+					if (prey.isPenned()) {
+						// no longer attracts those outside
+						entity.remove(CohesionAttractor.class);
+						entity.remove(PreyPredatorAttractor.class);
+						entity.remove(AttractedByLister.class);
+						entity.remove(PredatorHidden.class);
+						entity.add(new AttractedByLister(new AttractorProvider() {
+							@Override
+							public List<Attractor> getAttractorsFoundIn(Entity entity) {
+								List<Attractor> attractors = new ArrayList<Attractor>();
+								CrowdingRepulsor crowding = CROWDING_MAPPER.get(entity);
+								if (crowding != null) {
+									attractors.add(crowding);
+								}
+								return attractors;
+							}
+						}));
+					}
 					if (!prey.isPenned() && HIDDEN_PREDATOR_MAPPER.get(entity) != null) {
 						for (IntersectableModel transformer : getCurrentLevel().getWolfTransformModels()) {
 							if (transformer.contains(model)) {
@@ -409,7 +428,6 @@ public class LogicHandler {
 								entity.remove(CrowdingRepulsor.class);
 								entity.remove(CohesionAttractor.class);
 								entity.remove(PreyPredatorAttractor.class);
-								entity.remove(Prey.class);
 								entity.remove(AttractedByLister.class);
 								entity.remove(PredatorHidden.class);
 
