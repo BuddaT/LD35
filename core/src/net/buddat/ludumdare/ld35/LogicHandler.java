@@ -15,15 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-import net.buddat.ludumdare.ld35.entity.AttractorType;
-import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
-import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
-import net.buddat.ludumdare.ld35.entity.FlockAttractor;
-import net.buddat.ludumdare.ld35.entity.Movement;
-import net.buddat.ludumdare.ld35.entity.Position;
-import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
-import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
-import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
+import net.buddat.ludumdare.ld35.entity.*;
 import net.buddat.ludumdare.ld35.game.Level;
 import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
@@ -54,6 +46,8 @@ public class LogicHandler {
 			ComponentMapper.getFor(Prey.class);
 	private static final ComponentMapper<Predator> PREDATOR_MAPPER =
 			ComponentMapper.getFor(Predator.class);
+	private static final ComponentMapper<PredatorHidden> HIDDEN_PREDATOR_MAPPER =
+			ComponentMapper.getFor(PredatorHidden.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
@@ -137,8 +131,13 @@ public class LogicHandler {
 
 	private ProjectionTranslator projectionTranslator;
 
-	public void assignPlayerModel(IntersectableModel model) {
-		getCurrentLevel().getPlayer().add(new ModelComponent(model));
+	private ArrayList<Entity> staleModelEntities = new ArrayList<Entity>();
+
+	/**
+	 * @return All entities with stale models
+	 */
+	public List<Entity> getStaleModelEntities() {
+		return staleModelEntities;
 	}
 
 	/**
@@ -197,6 +196,7 @@ public class LogicHandler {
 	}
 
 	public void update() {
+		staleModelEntities.clear();
 		Engine engine = getCurrentLevel().getEngine();
 		Entity player = getCurrentLevel().getPlayer();
 		
@@ -353,8 +353,29 @@ public class LogicHandler {
 			model.updateCollisions();
 			Prey prey = PREY_MAPPER.get(entity);
 			if (PREY_MAPPER.get(entity) != null) {
-				prey.setPenned(!prey.isDead()
-						&& getCurrentLevel().getSheepPenModel().contains(model));
+				if (!prey.isDead()) {
+					prey.setPenned(getCurrentLevel().getSheepPenModel().contains(model));
+					if (!prey.isPenned() && HIDDEN_PREDATOR_MAPPER.get(entity) != null) {
+						for (IntersectableModel transformer : getCurrentLevel().getWolfTransformModels()) {
+							if (transformer.contains(model)) {
+								// Remove all prey components and add predator
+								entity.remove(Prey.class);
+								entity.remove(CrowdingRepulsor.class);
+								entity.remove(CohesionAttractor.class);
+								entity.remove(PreyPredatorAttractor.class);
+								entity.remove(Prey.class);
+								entity.remove(AttractedByLister.class);
+								entity.remove(PredatorHidden.class);
+
+								entity.add(new PredatorPreyRepulsor())
+										.add(new Predator())
+										.add(PREDATOR_ATTRACTORS_LISTER);
+								staleModelEntities.add(entity);
+								break;
+							}
+						}
+					}
+				}
 			}
 			Predator predator = PREDATOR_MAPPER.get(entity);
 			if (predator != null) {
@@ -464,27 +485,6 @@ public class LogicHandler {
 		}
 	}
 
-	public class Prey implements Component {
-		private boolean penned = false;
-		private boolean dead;
-
-		public void setPenned(boolean penned) {
-			this.penned = penned;
-		}
-
-		public void kill() {
-			this.dead = true;
-		}
-
-		public boolean isPenned() {
-			return penned;
-		}
-
-		public boolean isDead() {
-			return dead;
-		}
-	};
-	
 	public static class PredatorHidden implements Component {};
 
 	public static class Predator implements Component {};

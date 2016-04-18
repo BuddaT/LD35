@@ -1,6 +1,7 @@
 package net.buddat.ludumdare.ld35.gfx;
 
 import java.util.HashMap;
+import java.util.List;
 
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.Gdx;
@@ -22,6 +23,7 @@ import com.badlogic.gdx.utils.Array;
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
 import net.buddat.ludumdare.ld35.LogicHandler.Predator;
+import net.buddat.ludumdare.ld35.entity.Position;
 import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 import net.buddat.ludumdare.ld35.game.Level;
 
@@ -88,35 +90,41 @@ public class WorldRenderer implements ProjectionTranslator {
 		instances.add(playerModelInstance);
 
 		currentLevel = new Level(10, 2, 1.0f);
-		// GraphicsHandler.getLogicHandler().assignPlayerModel(playerModelInstance);
 
 		instances.addAll(currentLevel.getCollisionModels());
 		instances.add(currentLevel.getSheepPenModel());
 		instances.addAll(currentLevel.getWolfTransformModels());
-		
+
 		GraphicsHandler.getLogicHandler().createCreatures(
-				new LogicHandler.ModelInstanceProvider() {
-					@Override
-					public IntersectableModel createModel(Entity e, Vector3 position) {
-						IntersectableModel model;
-						if (e.getComponent(Predator.class) != null)
-							model = ModelFactory.createCustomModel(GraphicsHandler.MDL_WOLF);
-						else
-							model = ModelFactory.createCustomModel(GraphicsHandler.MDL_SHEEP);
-						model.transform.setToTranslation(position);
-						
-						instances.add(model);
-						
-						AnimationController anim = new AnimationController(model);
-						anim.setAnimation(model.animations.first().id, -1);
-						anim.update(MathUtils.random(anim.current.duration));
-						animations.put(model, anim);
-						
-						return model;
-					}
-				});
+				modelInstanceProvider);
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
 	}
+
+	private IntersectableModel createCreatureModel(String modelFile, Vector3 position) {
+		IntersectableModel model;
+		model = ModelFactory.createCustomModel(modelFile);
+		model.transform.setToTranslation(position);
+
+		instances.add(model);
+
+		AnimationController anim = new AnimationController(model);
+		anim.setAnimation(model.animations.first().id, -1);
+		anim.update(MathUtils.random(anim.current.duration));
+		animations.put(model, anim);
+
+		return model;
+	}
+
+	public LogicHandler.ModelInstanceProvider modelInstanceProvider =
+			new LogicHandler.ModelInstanceProvider() {
+				@Override
+				public IntersectableModel createModel(Entity e, Vector3 position) {
+					if (e.getComponent(Predator.class) != null)
+						return createCreatureModel(GraphicsHandler.MDL_WOLF, position);
+					else
+						return createCreatureModel(GraphicsHandler.MDL_SHEEP, position);
+				}
+			};
 
 	private boolean reverseY = false;
 
@@ -138,16 +146,26 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		shadowLight.setDirection(sunLight.direction);
 
+		LogicHandler logicHandler = GraphicsHandler.getLogicHandler();
+		for (Entity entity : logicHandler.getStaleModelEntities()) {
+			Vector3 position = entity.getComponent(Position.class).position;
+			IntersectableModel oldModel = entity.getComponent(LogicHandler.ModelComponent.class).model;
+			instances.removeValue(oldModel, true);
+			IntersectableModel newModel = modelInstanceProvider.createModel(entity, position);
+			entity.remove(LogicHandler.ModelComponent.class);
+			entity.add(new LogicHandler.ModelComponent(newModel));
+		}
+
 		for (AnimationController a : animations.values())
 			a.update(delta);
 
-		playerModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
+		playerModelInstance.transform.setTranslation(logicHandler.getPlayerPosn());
 		playerModelInstance.updateCollisions();
 		
-		worldModelInstance.transform.setTranslation(GraphicsHandler.getLogicHandler().getPlayerPosn());
+		worldModelInstance.transform.setTranslation(logicHandler.getPlayerPosn());
 		
-		playerCam.position.set(GraphicsHandler.getLogicHandler().getPlayerPosn().x, CAMERA_HEIGHT,
-				GraphicsHandler.getLogicHandler().getPlayerPosn().z);
+		playerCam.position.set(logicHandler.getPlayerPosn().x, CAMERA_HEIGHT,
+				logicHandler.getPlayerPosn().z);
 		playerCam.update();
 	}
 

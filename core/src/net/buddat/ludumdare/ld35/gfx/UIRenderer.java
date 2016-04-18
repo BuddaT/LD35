@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 import net.buddat.ludumdare.ld35.GraphicsHandler;
 import net.buddat.ludumdare.ld35.LogicHandler;
+import net.buddat.ludumdare.ld35.entity.Prey;
 
 public class UIRenderer {
 	
@@ -64,7 +65,7 @@ public class UIRenderer {
 		}
 		
 		for (Entity ent : e.getEntities()) {
-			if (ent.getComponent(LogicHandler.Prey.class) != null)
+			if (ent.getComponent(Prey.class) != null)
 				sheepCount++;
 			if (ent.getComponent(LogicHandler.PredatorHidden.class) != null)
 				hiddenSheepCount++;
