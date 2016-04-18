@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -54,8 +55,14 @@ public class WorldRenderer implements ProjectionTranslator {
 	public boolean pauseLogic = true;
 	public boolean levelWon = false;
 	public boolean levelLost = false;
+	public boolean firstLevel = true;
 	
 	public boolean justStarted = true;
+	
+	public Sound sheepAmbientSnd, sheepBaa1, sheepBaa2, sheepBaa3, wolfHowl, killSound;
+	
+	private static final long SND_MIN_DELTA = 5000;
+	private long lastSndPlayed = 0;
 
 	public WorldRenderer() {
 
@@ -75,6 +82,7 @@ public class WorldRenderer implements ProjectionTranslator {
 		if (increaseDifficulty) {
 			currentLevel = new Level((int) (currentLevel.sheepCount * 1.5f), (int) (currentLevel.wolfCount * 1.5f), currentLevel.complexity * 1.5f);
 		} else {
+			firstLevel = true;
 			currentLevel = new Level(10, 2, 1.0f);
 		}
 		
@@ -123,6 +131,15 @@ public class WorldRenderer implements ProjectionTranslator {
 
 		GraphicsHandler.getLogicHandler().createCreatures(modelInstanceProvider);
 		GraphicsHandler.getLogicHandler().setProjectionTranslator(this);
+		
+		sheepAmbientSnd = Gdx.audio.newSound(Gdx.files.internal("sheep_ambient.mp3"));
+		sheepAmbientSnd.loop();
+		
+		sheepBaa1 = Gdx.audio.newSound(Gdx.files.internal("sheep_real.mp3"));
+		sheepBaa2 = Gdx.audio.newSound(Gdx.files.internal("sheep_low.mp3"));
+		sheepBaa3 = Gdx.audio.newSound(Gdx.files.internal("sheep_lol.mp3"));
+		wolfHowl = Gdx.audio.newSound(Gdx.files.internal("wolf_snarl.mp3"));
+		killSound = Gdx.audio.newSound(Gdx.files.internal("death.mp3"));
 	}
 
 	private IntersectableModel createCreatureModel(String modelFile, Vector3 position) {
@@ -179,6 +196,8 @@ public class WorldRenderer implements ProjectionTranslator {
 			IntersectableModel newModel = modelInstanceProvider.createModel(entity, position);
 			entity.remove(LogicHandler.ModelComponent.class);
 			entity.add(new LogicHandler.ModelComponent(newModel));
+			
+			wolfHowl.play();
 		}
 
 		for (AnimationController a : animations.values())
@@ -199,6 +218,25 @@ public class WorldRenderer implements ProjectionTranslator {
 		} else if (currentLevel.checkLose(logicHandler.getNumDead())) {
 			pauseLogic = true;
 			levelLost = true;
+		}
+		
+		if (System.currentTimeMillis() - lastSndPlayed > SND_MIN_DELTA) {
+			lastSndPlayed = System.currentTimeMillis();
+			
+			switch(MathUtils.random(4)) {
+			case 0:
+				sheepBaa1.play();
+				break;
+			case 1:
+				sheepBaa2.play();
+				break;
+			case 2:
+				sheepBaa3.play();
+				break;
+			case 3:
+				
+				break;
+			}
 		}
 	}
 	

@@ -49,7 +49,7 @@ public class Level {
 		this.sheepToWin = (int) (sheepCount / (5f / complexity));
 		this.deadToLose = sheepCount - sheepToWin + 1;
 		
-		this.hiddenSheepChance = 0.1f * complexity;
+		this.hiddenSheepChance = complexity - 1.0f;
 
 		this.engine = new Engine();
 

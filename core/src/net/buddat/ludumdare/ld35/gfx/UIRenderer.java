@@ -141,11 +141,19 @@ public class UIRenderer {
 				font.getData().setScale(2.5f, 1.5f);
 				layout.setText(font, "Click anywhere to go to the next level");
 				font.draw(batch, "Click anywhere to go to the next level", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 200);
+				
+				if (w.firstLevel) {
+					layout.setText(font, "Beware the wolves in sheep's clothing");
+					font.draw(batch, "Beware the wolves in sheep's clothing", screenWidth / 2 - layout.width / 2, screenHeight / 2 - 40);
+				}
 			batch.end();
 			
 			if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
 				w.newLevel(true);
 				w.pauseLogic = false;
+				
+				if (w.firstLevel)
+					w.firstLevel = false;
 			}
 		}
 		
@@ -177,6 +185,8 @@ public class UIRenderer {
 				w.justStarted = true;
 			}
 		}
+		
+		
 	}
 
 	public void dispose() {

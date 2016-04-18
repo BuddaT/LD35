@@ -17,7 +17,17 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-import net.buddat.ludumdare.ld35.entity.*;
+import net.buddat.ludumdare.ld35.entity.Attractor;
+import net.buddat.ludumdare.ld35.entity.AttractorType;
+import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
+import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
+import net.buddat.ludumdare.ld35.entity.FixedObjectRepulsor;
+import net.buddat.ludumdare.ld35.entity.Movement;
+import net.buddat.ludumdare.ld35.entity.Position;
+import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
+import net.buddat.ludumdare.ld35.entity.Prey;
+import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
+import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
 import net.buddat.ludumdare.ld35.game.Level;
 import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
@@ -25,11 +35,11 @@ import net.buddat.ludumdare.ld35.math.MovementCalculator;
 
 public class LogicHandler {
 	private static final int NUM_CREATURES = 5;
-	private Family creatures =
+	private final Family creatures =
 			Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
-	private Family preyFamily =
+	private final Family preyFamily =
 			Family.all(Prey.class).exclude(Mouseable.class).get();
-	private Family obstacleFamily =
+	private final Family obstacleFamily =
 			Family.all(FixedObjectRepulsor.class).get();
 	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
@@ -430,6 +440,9 @@ public class LogicHandler {
 							preyModel.materials.get(1).set(ColorAttribute.createDiffuse(Color.RED));
 							preyModel.transform.translate(0f, 1f, 0f).rotate(Vector3.X, 90).translate(0f, -1f, 0f);
 							GraphicsHandler.getGraphicsHandler().getWorldRenderer().getAnimController(preyModel).paused = true;
+							
+							GraphicsHandler.getGraphicsHandler().getWorldRenderer().wolfHowl.play();
+							GraphicsHandler.getGraphicsHandler().getWorldRenderer().killSound.play(0.5f);
 						}
 						prey.kill();
 						// dead prey can't move
