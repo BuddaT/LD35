@@ -193,6 +193,7 @@ public class Level {
 		}
 		
 		IntersectableModel treeInstance = ModelFactory.createCustomModel(treeType);
+		IntersectableModel collisionModel = null;
 		do {
 			okay = true;
 			
@@ -216,11 +217,16 @@ public class Level {
 				
 				if (treeInstance.intersects(GraphicsHandler.getGraphicsHandler().getWorldRenderer().getPlayerModel()))
 					okay = false;
+
+				collisionModel = newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(1.5f), rotateAmnt, treeType);
+				if (collisionModel.intersects(sheepPenModel)) {
+					collisionModel = null;
+					okay = false;
+				}
 			}
 		} while (!okay);
-		IntersectableModel model = newCollision(penLocX, 0f, penLocZ, 0.5f + MathUtils.random(1.5f), rotateAmnt, treeType);
-		addFixedEntity(model, penLocX, penLocZ);
-		addCollisionModel(model);
+		addFixedEntity(collisionModel, penLocX, penLocZ);
+		addCollisionModel(collisionModel);
 	}
 	
 	private void createWolfTransform(float mapSize) {
