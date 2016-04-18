@@ -197,6 +197,7 @@ public class LogicHandler {
 		Array<IntersectableModel> collisionModels = getCurrentLevel().getCollisionModels();
 		if (!collides(player, collisionModels)) {
 			position.set(worldMousePosn);
+			MODEL_MAPPER.get(player).model.updateCollisions();
 		}
 		ImmutableArray<Entity> entities = engine.getEntitiesFor(creatures);
 		calculateMovementChanges(engine, player, entities);
@@ -294,8 +295,6 @@ public class LogicHandler {
 	private boolean collides(Entity entity, Array<IntersectableModel> boxes) {
 		Position posn = POSN_MAPPER.get(entity);
 		Movement movement = MVMNT_MAPPER.get(entity);
-		// maybe we shouldn't be transforming it from within the logic
-		// but whatever. hack hack hack, hackity hack
 		IntersectableModel model = MODEL_MAPPER.get(entity).model;
 		Vector2 start = createXZVector(posn.position);
 		Vector2 end = new Vector2(start).add(createXZVector(movement.velocity));
