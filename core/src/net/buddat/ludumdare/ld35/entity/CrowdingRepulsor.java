@@ -9,7 +9,7 @@ public class CrowdingRepulsor implements Attractor {
 
 	@Override
 	public float getBaseSpeed(float distance) {
-		return -CROWDING_RANGE/(distance*distance);
+		return -60f * CROWDING_RANGE/(distance*distance);
 	}
 
 	@Override

@@ -9,7 +9,7 @@ public class CohesionAttractor implements Attractor {
 
 	@Override
 	public float getBaseSpeed(float distance) {
-		return 1;
+		return 60;
 	}
 
 	@Override

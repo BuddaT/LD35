@@ -9,7 +9,7 @@ public class PredatorPreyRepulsor implements Attractor {
 
 	@Override
 	public float getBaseSpeed(float distance) {
-		return -0.5f;
+		return -30f;
 	}
 
 	@Override
