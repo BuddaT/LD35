@@ -9,6 +9,6 @@ public abstract class AttractionProvider {
 	public abstract float getMaxRange();
 
 	public AttractorType getType() {
-		return AttractorType.GENERAL;
+		return AttractorType.FIXED_OBSTACLE;
 	}
 }

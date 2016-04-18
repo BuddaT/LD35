@@ -17,16 +17,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-import net.buddat.ludumdare.ld35.entity.Attractor;
-import net.buddat.ludumdare.ld35.entity.AttractorType;
-import net.buddat.ludumdare.ld35.entity.CohesionAttractor;
-import net.buddat.ludumdare.ld35.entity.CrowdingRepulsor;
-import net.buddat.ludumdare.ld35.entity.Movement;
-import net.buddat.ludumdare.ld35.entity.Position;
-import net.buddat.ludumdare.ld35.entity.PredatorPreyRepulsor;
-import net.buddat.ludumdare.ld35.entity.Prey;
-import net.buddat.ludumdare.ld35.entity.PreyPredatorAttractor;
-import net.buddat.ludumdare.ld35.entity.ProjectionTranslator;
+import net.buddat.ludumdare.ld35.entity.*;
 import net.buddat.ludumdare.ld35.game.Level;
 import net.buddat.ludumdare.ld35.gfx.IntersectableModel;
 import net.buddat.ludumdare.ld35.math.ImmutableVector3;
@@ -34,8 +25,12 @@ import net.buddat.ludumdare.ld35.math.MovementCalculator;
 
 public class LogicHandler {
 	private static final int NUM_CREATURES = 5;
-	private Family creatures;
-	private Family preyFamily;
+	private Family creatures =
+			Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
+	private Family preyFamily =
+			Family.all(Prey.class).exclude(Mouseable.class).get();
+	private Family obstacleFamily =
+			Family.all(FixedObjectRepulsor.class).get();
 	private static final ComponentMapper<Position> POSN_MAPPER =
 			ComponentMapper.getFor(Position.class);
 	private static final ComponentMapper<Movement> MVMNT_MAPPER =
@@ -59,6 +54,8 @@ public class LogicHandler {
 			ComponentMapper.getFor(Predator.class);
 	private static final ComponentMapper<PredatorHidden> HIDDEN_PREDATOR_MAPPER =
 			ComponentMapper.getFor(PredatorHidden.class);
+	private static final ComponentMapper<FixedObjectRepulsor> OBSTACLE_MAPPER =
+			ComponentMapper.getFor(FixedObjectRepulsor.class);
 
 	// Distance to player within which evasion is attempted (^ 2)
 	private static final float PLAYER_EFFECT_RANGE = 20*20;
@@ -194,8 +191,6 @@ public class LogicHandler {
 	}
 
 	public void init() {
-		creatures = Family.all(Position.class, Movement.class).exclude(Mouseable.class).get();
-		preyFamily = Family.all(Prey.class).exclude(Mouseable.class).get();
 	}
 
 	private Level getCurrentLevel() {
@@ -244,6 +239,8 @@ public class LogicHandler {
 		Position playerPosn = POSN_MAPPER.get(player);
 
 		// First calculate change in position for all objects.
+		// Note that re-used of entity collection iterators means you can't
+		// have inner loops, hence use of indices.
 		for (int i = 0; i < entities.size(); i++) {
 			Entity entity = entities.get(i);
 			Position posn = POSN_MAPPER.get(entity);
@@ -292,7 +289,24 @@ public class LogicHandler {
 					}
 				}
 			}
-
+			// Add fixed attractors
+			ImmutableArray<Entity> obstacles = engine.getEntitiesFor(obstacleFamily);
+			Vector3 obstacleChange = attractors.get(AttractorType.FIXED_OBSTACLE);
+			for (int obstacleIdx = 0; obstacleIdx < obstacles.size(); obstacleIdx++) {
+				Entity obstacle = obstacles.get(obstacleIdx);
+				FixedObjectRepulsor repulsor = OBSTACLE_MAPPER.get(obstacle);
+				Position otherPosn = POSN_MAPPER.get(obstacle);
+				if (repulsor == null || otherPosn == null) {
+					System.out.println("Null found for obstacle " + repulsor + ", " + otherPosn);
+					continue;
+				}
+				float distance = posn.position.dst2(otherPosn.position);
+				if (distance <= repulsor.getMaxRange()) {
+					float speed = repulsor.getBaseSpeed(distance);
+					Vector3 direction = movementCalculator.towards(posn, otherPosn).nor();
+					obstacleChange.add(direction.scl(speed));
+				}
+			}
 			// Add all attractions together, clamped by their speed
 			for (AttractorType attractorType : AttractorType.values()) {
 				Vector3 attractantChange = attractors.get(attractorType);
