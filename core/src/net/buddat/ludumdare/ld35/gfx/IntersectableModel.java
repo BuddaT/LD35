@@ -51,6 +51,8 @@ public class IntersectableModel extends ModelInstance {
 	}
 	
 	public boolean lineIntersectsCollision(Vector2 p1, Vector2 p2) {
+		updateCollisions();
+
 		Rectangle r = collision.getBoundingRectangle();
 		
         return lineIntersectsLine(p1, p2, new Vector2(r.x, r.y), new Vector2(r.x + r.width, r.y)) ||
